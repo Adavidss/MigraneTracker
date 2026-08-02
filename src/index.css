@@ -1,0 +1,266 @@
+@import 'tailwindcss';
+
+/* Theme is driven by a class on <html> so the user can override the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-fg);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-fg);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-fg);
+  --color-destructive: var(--destructive);
+  --color-ring: var(--ring);
+
+  /* A day logged as headache-free: deliberately pale so saturation always
+     means pain and nothing else. */
+  --color-clear: var(--clear);
+  --color-clear-foreground: var(--clear-fg);
+
+  --font-sans:
+    ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, system-ui, sans-serif;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.375rem;
+
+  --animate-fade-in: fade-in 0.2s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+:root {
+  --bg: #f7f6fb;
+  --fg: #1c1a24;
+  --card: #ffffff;
+  --card-fg: #1c1a24;
+  --muted: #eeecf5;
+  --muted-fg: #6b6577;
+  --border: #e4e1ee;
+  --input: #ddd9ec;
+  --primary: #5b57c4;
+  --primary-fg: #ffffff;
+  --accent: #eceafa;
+  --accent-fg: #423e9e;
+  --destructive: #d2404f;
+  --ring: #5b57c4;
+  --clear: #d9f0e4;
+  --clear-fg: #2b6b4f;
+
+  /* The data-visualisation ramps live outside @theme: they are only ever read
+     through var() in inline styles and SVG fills, and Tailwind drops theme
+     tokens that no utility class references. */
+
+  /* Pain intensity, 1 (mild) to 5 (extreme). Monotone in lightness so the order
+     survives colour blindness; see INTENSITY_HEX in lib/types.ts. */
+  --color-pain-1: #31be98;
+  --color-pain-2: #b08505;
+  --color-pain-3: #b1582b;
+  --color-pain-4: #993845;
+  --color-pain-5: #69286d;
+
+  /* Categorical chart series. Two slots is all this app needs, and the pair
+     clears every gate of the data-viz palette check in both modes. */
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+
+  /* Sequential single-hue ramp for the heatmap's count metrics. */
+  --color-count-1: #9b90ea;
+  --color-count-2: #8378cf;
+  --color-count-3: #6c60b5;
+  --color-count-4: #56489b;
+  --color-count-5: #423182;
+}
+
+.dark {
+  --bg: #14131a;
+  --fg: #ecebf2;
+  --card: #1c1b25;
+  --card-fg: #ecebf2;
+  --muted: #262533;
+  --muted-fg: #9a95ab;
+  --border: #302e40;
+  --input: #3a3750;
+  --primary: #9b96ee;
+  --primary-fg: #16141f;
+  --accent: #292539;
+  --accent-fg: #c5c0f7;
+  --destructive: #ef6b7a;
+  --ring: #9b96ee;
+  --clear: #1e3a2e;
+  --clear-fg: #7fd4a8;
+
+  /* Same hues, re-stepped for the dark surface rather than flipped. */
+  --color-pain-1: #5cd8b0;
+  --color-pain-2: #deaa1f;
+  --color-pain-3: #e57945;
+  --color-pain-4: #cf5867;
+  --color-pain-5: #994b9e;
+
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+
+  --color-count-1: #56489b;
+  --color-count-2: #685bb0;
+  --color-count-3: #7a6fc5;
+  --color-count-4: #8d82db;
+  --color-count-5: #a196f1;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* The bottom tab bar is fixed; keep content clear of the home indicator. */
+    overscroll-behavior-y: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Inputs inherit the app font instead of the UA default. */
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* iOS zooms the page when focusing a field under 16px. */
+  @supports (-webkit-touch-callout: none) {
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1em);
+    }
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Hide scrollbars on horizontal filter rails without disabling scrolling. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Doctor Visit Mode prints to paper — drop the app chrome and force the
+   light palette so charts stay legible in ink. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  html.dark {
+    color-scheme: light;
+  }
+
+  html.dark {
+    --bg: #ffffff;
+    --fg: #000000;
+    --card: #ffffff;
+    --card-fg: #000000;
+    --muted: #f2f2f4;
+    --muted-fg: #444444;
+    --border: #c8c8d0;
+    --accent: #eeecfa;
+    --accent-fg: #332f8a;
+    --clear: #e6f5ec;
+    --clear-fg: #24604a;
+    /* The dark ramps are tuned for a near-black surface and wash out on paper. */
+    --color-pain-1: #31be98;
+    --color-pain-2: #b08505;
+    --color-pain-3: #b1582b;
+    --color-pain-4: #993845;
+    --color-pain-5: #69286d;
+    --color-series-1: #2a78d6;
+    --color-series-2: #eb6834;
+    --color-count-1: #9b90ea;
+    --color-count-2: #8378cf;
+    --color-count-3: #6c60b5;
+    --color-count-4: #56489b;
+    --color-count-5: #423182;
+  }
+
+  /* Browsers drop background fills when "print backgrounds" is off, which would
+     erase the entire pain encoding from a doctor's copy. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .print\:hidden,
+  nav[data-app-nav] {
+    display: none !important;
+  }
+
+  .print-break-before {
+    break-before: page;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
