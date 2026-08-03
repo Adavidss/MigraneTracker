@@ -679,8 +679,9 @@ export default function LogEpisode({ episodeId }: { episodeId?: string }) {
           </p>
         ) : null}
 
-        {/* Reachable from anywhere in the form without scrolling to the end. */}
-        <div className="sticky bottom-0 z-20 -mx-4 bg-gradient-to-t from-background via-background to-transparent px-4 pt-6 pb-4">
+        {/* Reachable from anywhere in the form without scrolling to the end,
+            and clear of the iPhone home indicator. */}
+        <div className="sticky bottom-0 z-20 -mx-4 bg-gradient-to-t from-background via-background to-transparent px-4 pt-6 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <Button
             size="lg"
             block

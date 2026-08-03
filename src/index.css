@@ -131,6 +131,8 @@
   html {
     color-scheme: light;
     -webkit-tap-highlight-color: transparent;
+    /* Stop iOS inflating text when the phone is turned to landscape. */
+    -webkit-text-size-adjust: 100%;
   }
 
   html.dark {
@@ -164,12 +166,58 @@
     color: inherit;
   }
 
-  /* iOS zooms the page when focusing a field under 16px. */
+  /* Every control is a tap target: skip the 300ms double-tap-zoom wait, and
+     stop long-press raising the iOS text-selection callout on a button. */
+  button,
+  a,
+  select,
+  [role='button'],
+  [role='radio'],
+  [role='checkbox'],
+  [role='switch'],
+  [role='tab'],
+  input[type='range'] {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+  }
+
+  button,
+  a,
+  [role='radio'],
+  [role='checkbox'],
+  [role='tab'] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* iOS-specific input behaviour. */
   @supports (-webkit-touch-callout: none) {
+    /* Anything under 16px makes Safari zoom the page on focus. */
     input,
     textarea,
     select {
       font-size: max(16px, 1em);
+    }
+
+    /* Safari left-aligns date and time values in a box sized for the widest
+       locale, which leaves them floating; pin them to the start of the field. */
+    input[type='date'],
+    input[type='time'] {
+      display: block;
+      min-height: 2.75rem;
+      -webkit-appearance: none;
+      appearance: none;
+      text-align: left;
+    }
+
+    input[type='date']::-webkit-date-and-time-value,
+    input[type='time']::-webkit-date-and-time-value {
+      text-align: left;
+    }
+
+    /* An empty date input renders its placeholder in near-black otherwise. */
+    input[type='date']:not(:focus):invalid::-webkit-datetime-edit {
+      color: var(--color-muted-foreground);
     }
   }
 }

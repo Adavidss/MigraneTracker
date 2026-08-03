@@ -41,6 +41,21 @@ export default defineConfig({
         scope: BASE,
         start_url: BASE,
         categories: ['health', 'medical', 'lifestyle'],
+        // Long-pressing the home screen icon jumps straight to logging.
+        shortcuts: [
+          {
+            name: 'Log a headache',
+            short_name: 'Log',
+            url: `${BASE}#/log`,
+            icons: [{ src: 'icon-192.png', sizes: '192x192' }],
+          },
+          {
+            name: 'For your doctor',
+            short_name: 'Doctor',
+            url: `${BASE}#/doctor`,
+            icons: [{ src: 'icon-192.png', sizes: '192x192' }],
+          },
+        ],
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },

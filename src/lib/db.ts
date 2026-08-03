@@ -2,8 +2,10 @@ import Dexie, { type EntityTable } from 'dexie'
 import {
   DEFAULT_MEDICATIONS,
   DEFAULT_SETTINGS,
+  guessMedicationClass,
   type DayLog,
   type Episode,
+  type MedicationClass,
   type MedicationPreset,
   type Settings,
 } from './types'
@@ -168,6 +170,9 @@ async function rememberMedications(episode: Episode): Promise<void> {
         useCount: existing.useCount + 1,
         defaultAmount: dose.amount,
         defaultUnit: dose.unit,
+        // Fill in a class for presets saved before classes existed, but never
+        // overwrite one the user has corrected.
+        medClass: existing.medClass ?? guessMedicationClass(dose.name),
       })
     } else {
       await db.medications.put({
@@ -176,6 +181,7 @@ async function rememberMedications(episode: Episode): Promise<void> {
         defaultAmount: dose.amount,
         defaultUnit: dose.unit,
         useCount: 1,
+        medClass: guessMedicationClass(dose.name),
       })
     }
   }
@@ -200,7 +206,15 @@ export async function addMedicationPreset(
     defaultAmount,
     defaultUnit,
     useCount: 0,
+    medClass: guessMedicationClass(name),
   })
+}
+
+export async function setMedicationClass(
+  id: string,
+  medClass: MedicationClass,
+): Promise<void> {
+  await db.medications.update(id, { medClass })
 }
 
 export async function deleteMedicationPreset(id: string): Promise<void> {

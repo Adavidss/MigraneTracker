@@ -50,10 +50,27 @@ clear run, medication effectiveness and time to relief, monthly trends, pain
 distribution, aura frequency, region frequency, and a GitHub-style year heatmap
 that can show headaches, worst pain, or medication use.
 
-**Doctor visit mode.** A print-optimised summary covering 1–12 months: headline
-figures, month calendars, a month-by-month table, medication effectiveness, aura
-history and the full episode log. Exports as PDF, PNG, or CSV (episodes, doses,
-and headache-free days separately), and prints cleanly to paper.
+**For your doctor.** A tab built to be handed over or sent ahead of an
+appointment, in two levels of detail.
+
+*Overview* leads with the numbers that change treatment decisions: headache days
+per month, migraine days, acute medication days, and whether the pattern is
+episodic or chronic. Below that, a "worth discussing" list surfaces things the
+diary shows but a person is unlikely to spot — crossing the four-days-a-month
+mark where preventives come into the conversation, acute medication use nearing
+the frequency at which it starts driving headaches, a worsening trend. Then the
+attack profile (typical severity, usual length, aura share, which side), a head
+map of where pain concentrates across the whole history, aura symptoms, acute
+medication use drawn against its per-class limit, what has actually helped, and
+the most recent attacks.
+
+*Full record* is the long form: month calendars, a month-by-month table,
+medication effectiveness, aura history and every episode.
+
+**Send** hands the PDF to the system share sheet, so on an iPhone it goes
+straight to Messages, Mail or AirDrop without leaving the app. Also exports as
+PDF, PNG, or CSV (episodes, doses and headache-free days separately). Printing
+includes both levels of detail.
 
 **History.** Filter by date range, type, aura, medication, minimum pain and
 minimum relief, plus free-text search across notes and medication names.
@@ -75,6 +92,20 @@ against both a white and a near-black surface. Values and rationale are in
 **Statistics are honest about gaps.** Streaks and frequency treat unlogged days
 as headache-free — the same assumption a paper diary makes — so every surface
 that reports them also reports how much of the window actually carries a record.
+
+**Thresholds are shown, not applied.** The doctor overview compares the diary
+against widely published figures — 15 headache days a month for a chronic
+pattern, 10 or 15 days of acute medication depending on drug class — and says
+so in those words. Nothing is labelled a diagnosis, because a headache diary
+cannot make one. Medication classes are guessed from the name and correctable
+in Settings, since the limit depends on the class. A trend is only reported over
+three months or more; below that the two halves are too short to mean anything.
+
+**Built for a phone first.** Every control clears 44px, controls opt out of
+double-tap zoom and long-press callouts, fields are 16px so Safari does not zoom
+on focus, and layouts respect the safe-area insets so nothing hides behind the
+home indicator. iOS never fires an install prompt, so Settings explains where
+Safari's Add to Home Screen button is.
 
 ## Development
 

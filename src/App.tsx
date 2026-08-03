@@ -13,7 +13,7 @@ import DayDetail from '@/routes/DayDetail'
 const Timeline = lazy(() => import('@/routes/Timeline'))
 const Insights = lazy(() => import('@/routes/Insights'))
 const History = lazy(() => import('@/routes/History'))
-const Report = lazy(() => import('@/routes/Report'))
+const Doctor = lazy(() => import('@/routes/Doctor'))
 const Settings = lazy(() => import('@/routes/Settings'))
 
 function Loading() {
@@ -44,8 +44,10 @@ function Router() {
       return <Insights />
     case '/history':
       return <History />
+    // `/report` was the original path; keep it working for an installed PWA.
+    case '/doctor':
     case '/report':
-      return <Report />
+      return <Doctor />
     case '/settings':
       return <Settings />
     case '/':

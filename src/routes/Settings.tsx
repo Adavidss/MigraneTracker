@@ -5,6 +5,7 @@ import {
   HardDriveDownload,
   Plus,
   ShieldCheck,
+  Smartphone,
   Trash2,
   Upload,
 } from 'lucide-react'
@@ -18,16 +19,21 @@ import {
   mergeData,
   replaceAllData,
   deleteMedicationPreset,
+  setMedicationClass,
   updateSettings,
 } from '@/lib/db'
 import { buildBackup, downloadBackup, parseBackup } from '@/lib/export'
 import {
   DOSE_UNITS,
   EPISODE_TYPE_LABEL,
+  guessMedicationClass,
   HEAD_REGIONS,
+  MEDICATION_CLASS_LABEL,
+  OVERUSE_THRESHOLD_DAYS,
   type DoseUnit,
   type EpisodeType,
   type HeadRegionId,
+  type MedicationClass,
   type ThemePreference,
 } from '@/lib/types'
 import { useSettings } from '@/store/useSettings'
@@ -44,6 +50,48 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: 'Dark' },
   { value: 'system', label: 'System' },
 ]
+
+/**
+ * iOS never fires an install prompt, so on iPhone the only way to get the app
+ * onto the home screen is to tell people where the button is. Hidden once the
+ * app is already running standalone.
+ */
+function InstallHint() {
+  const standalone =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(display-mode: standalone)').matches ||
+      // Safari's own flag, which predates display-mode.
+      (window.navigator as { standalone?: boolean }).standalone === true)
+
+  if (standalone) return null
+
+  const isIos =
+    typeof navigator !== 'undefined' &&
+    /iphone|ipad|ipod/i.test(navigator.userAgent)
+
+  return (
+    <Card className="flex gap-3 p-4">
+      <Smartphone className="size-5 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 text-sm leading-relaxed">
+        <p className="font-medium">Add it to your home screen</p>
+        <p className="mt-1 text-muted-foreground">
+          {isIos ? (
+            <>
+              Tap the Share button in Safari, then <b>Add to Home Screen</b>. It
+              opens full screen, works offline, and keeps your journal in one
+              place.
+            </>
+          ) : (
+            <>
+              Use your browser’s install or “Add to Home Screen” option. The app
+              then opens full screen and works offline.
+            </>
+          )}
+        </p>
+      </div>
+    </Card>
+  )
+}
 
 export default function Settings() {
   const settings = useSettings()
@@ -110,6 +158,8 @@ export default function Settings() {
             delete it, so keep a backup.
           </p>
         </Card>
+
+        <InstallHint />
 
         <Section title="Appearance">
           <ChipGroup
@@ -189,29 +239,59 @@ export default function Settings() {
               {medications.map((med) => (
                 <li
                   key={med.id}
-                  className="flex items-center gap-3 rounded-xl border border-border px-3 py-2"
+                  className="space-y-2 rounded-xl border border-border p-3"
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{med.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {med.defaultAmount} {med.defaultUnit}
-                      {med.useCount ? ` · used ${med.useCount}×` : ''}
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{med.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {med.defaultAmount} {med.defaultUnit}
+                        {med.useCount ? ` · used ${med.useCount}×` : ''}
+                      </div>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="iconSm"
+                      aria-label={`Remove ${med.name}`}
+                      onClick={async () => {
+                        await deleteMedicationPreset(med.id)
+                        toast.info(`Removed ${med.name}`)
+                      }}
+                    >
+                      <Trash2 />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="iconSm"
-                    aria-label={`Remove ${med.name}`}
-                    onClick={async () => {
-                      await deleteMedicationPreset(med.id)
-                      toast.info(`Removed ${med.name}`)
-                    }}
+                  <Select
+                    value={med.medClass ?? guessMedicationClass(med.name)}
+                    aria-label={`Type of medication for ${med.name}`}
+                    onChange={(e) =>
+                      setMedicationClass(
+                        med.id,
+                        e.target.value as MedicationClass,
+                      )
+                    }
                   >
-                    <Trash2 />
-                  </Button>
+                    {(
+                      Object.keys(MEDICATION_CLASS_LABEL) as MedicationClass[]
+                    ).map((cls) => (
+                      <option key={cls} value={cls}>
+                        {MEDICATION_CLASS_LABEL[cls]}
+                        {OVERUSE_THRESHOLD_DAYS[cls] != null
+                          ? ` — limit ${OVERUSE_THRESHOLD_DAYS[cls]} days/mo`
+                          : ''}
+                      </option>
+                    ))}
+                  </Select>
                 </li>
               ))}
             </ul>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              The type is guessed from the name and only affects one thing: how
+              many days a month of use your doctor summary flags as worth
+              discussing. Simple painkillers are flagged from 15 days a month,
+              combination painkillers and triptans from 10. Correct anything
+              that looks wrong.
+            </p>
 
             <div className="grid grid-cols-[1fr_5rem_5.5rem] gap-2">
               <Input

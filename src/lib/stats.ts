@@ -1,10 +1,16 @@
 import { differenceInCalendarDays, format } from 'date-fns'
 import {
+  guessMedicationClass,
+  HEAD_REGION_SIDE,
+  MEDICATION_CLASS_LABEL,
+  OVERUSE_THRESHOLD_DAYS,
   type AuraSymptom,
   type DayLog,
   type Episode,
   type Intensity,
+  type MedicationClass,
   type MedicationDose,
+  type MedicationPreset,
 } from './types'
 import {
   dateKey,
@@ -457,6 +463,345 @@ export function computeRegionFrequency(
       averageIntensity: round(mean(entry.intensities)),
     }))
     .sort((a, b) => b.count - a.count)
+}
+
+/* ------------------------------------------------------- clinical view --- */
+
+/**
+ * The figures a clinician reaches for first. Everything here is a plain
+ * summary of what the user recorded, compared against widely published
+ * thresholds so the two can be read side by side. Nothing here diagnoses
+ * anything; the wording in the UI is deliberately "worth discussing".
+ */
+
+export type HeadachePattern = 'episodic' | 'chronic' | 'insufficient-data'
+
+export interface MedicationDayUse {
+  name: string
+  medClass: MedicationClass
+  /** Distinct days the medication was taken, across the window. */
+  days: number
+  daysPerMonth: number
+  /** Published limit for this class, or null when the class is not counted. */
+  thresholdPerMonth: number | null
+  /** True once monthly use reaches the threshold for its class. */
+  atOrOverThreshold: boolean
+  /** True from 80% of the threshold, so it can be flagged before it is hit. */
+  approachingThreshold: boolean
+}
+
+export interface PatternFlag {
+  id: string
+  severity: 'info' | 'watch' | 'high'
+  title: string
+  detail: string
+}
+
+export interface ClinicalProfile {
+  monthsCovered: number
+  headacheDaysPerMonth: number | null
+  migraineDaysPerMonth: number | null
+  pattern: HeadachePattern
+  /** Attack length in hours, from episodes with a recorded end. */
+  duration: { median: number; shortest: number; longest: number } | null
+  typicalSeverity: Intensity | null
+  auraShare: number | null
+  laterality: {
+    left: number
+    right: number
+    bilateral: number
+    dominant: 'left' | 'right' | 'mixed' | null
+  }
+  /** Distinct days any counted acute medication was taken, per month. */
+  acuteMedDaysPerMonth: number | null
+  medicationUse: MedicationDayUse[]
+  /**
+   * Change in headache days per month between the first and second half of the
+   * window. Positive means more headache days recently.
+   */
+  trend: { direction: 'improving' | 'worsening' | 'stable'; delta: number } | null
+  flags: PatternFlag[]
+}
+
+/** Chronic migraine is defined from 15 headache days a month. */
+const CHRONIC_DAYS_PER_MONTH = 15
+
+function monthsBetween(from: string, to: string): number {
+  const days = differenceInCalendarDays(keyToDate(to), keyToDate(from)) + 1
+  return days > 0 ? days / 30.44 : 0
+}
+
+function median(values: number[]): number | null {
+  if (!values.length) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2
+    ? sorted[mid]!
+    : (sorted[mid - 1]! + sorted[mid]!) / 2
+}
+
+export function computeClinicalProfile(
+  input: StatsInput,
+  presets: MedicationPreset[] = [],
+): ClinicalProfile {
+  const { episodes, dayLogs } = filterToWindow(input)
+  const summary = computeSummary(input)
+
+  const from = summary.firstRecord
+  const to = input.to ?? dateKey()
+  const months = from ? monthsBetween(from, to) : 0
+
+  const headacheDaysPerMonth = months ? round(summary.headacheDays / months) : null
+  const migraineDaysPerMonth = months ? round(summary.migraineDays / months) : null
+
+  // Two clear months of data before calling the pattern anything.
+  const pattern: HeadachePattern =
+    months < 2 || headacheDaysPerMonth == null
+      ? 'insufficient-data'
+      : headacheDaysPerMonth >= CHRONIC_DAYS_PER_MONTH
+        ? 'chronic'
+        : 'episodic'
+
+  const durationsHours = episodes
+    .map((e) => durationMinutes(e.startTime, e.endTime))
+    .filter((d): d is number => d != null)
+    .map((d) => d / 60)
+
+  const durationMedian = median(durationsHours)
+  const duration =
+    durationMedian != null
+      ? {
+          median: round(durationMedian) ?? 0,
+          shortest: round(Math.min(...durationsHours)) ?? 0,
+          longest: round(Math.max(...durationsHours)) ?? 0,
+        }
+      : null
+
+  // Most frequent severity rather than the mean: "usually a 4" is more useful
+  // to a clinician than "3.6 on average".
+  const severityCounts = new Map<Intensity, number>()
+  for (const e of episodes) {
+    severityCounts.set(e.intensity, (severityCounts.get(e.intensity) ?? 0) + 1)
+  }
+  const typicalSeverity =
+    [...severityCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+
+  // Laterality, counted per episode rather than per painted region.
+  let left = 0
+  let right = 0
+  let bilateral = 0
+  for (const episode of episodes) {
+    const sides = new Set(
+      episode.painMap
+        .map((p) => HEAD_REGION_SIDE[p.region])
+        .filter((s) => s === 'left' || s === 'right'),
+    )
+    if (sides.size === 2) bilateral += 1
+    else if (sides.has('left')) left += 1
+    else if (sides.has('right')) right += 1
+  }
+  const sided = left + right + bilateral
+  const dominant =
+    sided === 0
+      ? null
+      : left / sided >= 0.7
+        ? 'left'
+        : right / sided >= 0.7
+          ? 'right'
+          : 'mixed'
+
+  // Medication use is counted in DAYS, not doses: three tablets in one day is
+  // one day of use, and days are what the published thresholds are set in.
+  const classOf = new Map(
+    presets.map((p) => [
+      normalizeMedName(p.name),
+      p.medClass ?? guessMedicationClass(p.name),
+    ]),
+  )
+  const daysByMed = new Map<string, { name: string; days: Set<string> }>()
+  const countedAcuteDays = new Set<string>()
+
+  for (const episode of episodes) {
+    for (const dose of episode.medications) {
+      const key = normalizeMedName(dose.name)
+      if (!key) continue
+      const entry = daysByMed.get(key) ?? { name: titleCase(key), days: new Set() }
+      entry.days.add(episode.date)
+      daysByMed.set(key, entry)
+
+      const cls = classOf.get(key) ?? guessMedicationClass(dose.name)
+      if (OVERUSE_THRESHOLD_DAYS[cls] != null) countedAcuteDays.add(episode.date)
+    }
+  }
+
+  const medicationUse: MedicationDayUse[] = [...daysByMed.entries()]
+    .map(([key, entry]) => {
+      const medClass = classOf.get(key) ?? guessMedicationClass(entry.name)
+      const days = entry.days.size
+      const perMonth = months ? days / months : 0
+      const threshold = OVERUSE_THRESHOLD_DAYS[medClass]
+      return {
+        name: entry.name,
+        medClass,
+        days,
+        daysPerMonth: round(perMonth) ?? 0,
+        thresholdPerMonth: threshold,
+        atOrOverThreshold: threshold != null && perMonth >= threshold,
+        approachingThreshold:
+          threshold != null && perMonth >= threshold * 0.8 && perMonth < threshold,
+      }
+    })
+    .sort((a, b) => b.daysPerMonth - a.daysPerMonth)
+
+  const acuteMedDaysPerMonth = months
+    ? round(countedAcuteDays.size / months)
+    : null
+
+  // Split the window in half and compare headache days per month either side.
+  // Under three months the halves are too short for the comparison to mean
+  // anything — one bad fortnight would read as a trend.
+  let trend: ClinicalProfile['trend'] = null
+  if (from && months >= 3) {
+    const midpoint = dateKey(
+      new Date(
+        (keyToDate(from).getTime() + keyToDate(to).getTime()) / 2,
+      ),
+    )
+    const halfMonths = months / 2
+    const firstHalf = new Set(
+      episodes.filter((e) => e.date < midpoint).map((e) => e.date),
+    ).size
+    const secondHalf = new Set(
+      episodes.filter((e) => e.date >= midpoint).map((e) => e.date),
+    ).size
+    const delta = round((secondHalf - firstHalf) / halfMonths) ?? 0
+    trend = {
+      // Under a day a month either way is noise, not a trend.
+      direction: delta <= -1 ? 'improving' : delta >= 1 ? 'worsening' : 'stable',
+      delta,
+    }
+  }
+
+  const flags = buildFlags({
+    months,
+    pattern,
+    headacheDaysPerMonth,
+    medicationUse,
+    trend,
+    coverage: summary.coverage,
+    untreated: episodes.filter((e) => e.medications.length === 0).length,
+    total: episodes.length,
+    dayLogCount: dayLogs.length,
+  })
+
+  return {
+    monthsCovered: round(months) ?? 0,
+    headacheDaysPerMonth,
+    migraineDaysPerMonth,
+    pattern,
+    duration,
+    typicalSeverity,
+    auraShare: summary.auraRate,
+    laterality: { left, right, bilateral, dominant },
+    acuteMedDaysPerMonth,
+    medicationUse,
+    trend,
+    flags,
+  }
+}
+
+function buildFlags(args: {
+  months: number
+  pattern: HeadachePattern
+  headacheDaysPerMonth: number | null
+  medicationUse: MedicationDayUse[]
+  trend: ClinicalProfile['trend']
+  coverage: number
+  untreated: number
+  total: number
+  dayLogCount: number
+}): PatternFlag[] {
+  const flags: PatternFlag[] = []
+
+  if (args.pattern === 'chronic' && args.headacheDaysPerMonth != null) {
+    flags.push({
+      id: 'chronic',
+      severity: 'high',
+      title: `${args.headacheDaysPerMonth} headache days a month`,
+      detail:
+        'Headache on 15 or more days a month is the threshold clinicians use to separate chronic from episodic patterns, and it usually changes what treatment is offered. Worth raising directly.',
+    })
+  } else if (
+    args.headacheDaysPerMonth != null &&
+    args.headacheDaysPerMonth >= 4 &&
+    args.months >= 2
+  ) {
+    flags.push({
+      id: 'preventive-candidate',
+      severity: 'watch',
+      title: `${args.headacheDaysPerMonth} headache days a month`,
+      detail:
+        'From about four headache days a month, guidelines suggest preventive treatment is worth considering alongside treating each attack.',
+    })
+  }
+
+  for (const med of args.medicationUse) {
+    if (med.atOrOverThreshold && med.thresholdPerMonth != null) {
+      flags.push({
+        id: `overuse-${med.name}`,
+        severity: 'high',
+        title: `${med.name} on ${med.daysPerMonth} days a month`,
+        detail: `Taking a ${MEDICATION_CLASS_LABEL[med.medClass].toLowerCase()} on ${med.thresholdPerMonth} or more days a month over several months can start to drive headaches on its own. This is worth checking, especially before adding anything new.`,
+      })
+    } else if (med.approachingThreshold && med.thresholdPerMonth != null) {
+      flags.push({
+        id: `approaching-${med.name}`,
+        severity: 'watch',
+        title: `${med.name} on ${med.daysPerMonth} days a month`,
+        detail: `Approaching the ${med.thresholdPerMonth} days a month at which frequent use of this kind of medication becomes a concern in its own right.`,
+      })
+    }
+  }
+
+  if (args.trend?.direction === 'worsening') {
+    flags.push({
+      id: 'worsening',
+      severity: 'watch',
+      title: `Headache days up by about ${Math.abs(args.trend.delta)} a month`,
+      detail:
+        'The second half of this period had more headache days than the first. A trend is easier to act on than a single bad month.',
+    })
+  } else if (args.trend?.direction === 'improving') {
+    flags.push({
+      id: 'improving',
+      severity: 'info',
+      title: `Headache days down by about ${Math.abs(args.trend.delta)} a month`,
+      detail:
+        'The second half of this period had fewer headache days than the first.',
+    })
+  }
+
+  if (args.total > 0 && args.untreated / args.total >= 0.3) {
+    flags.push({
+      id: 'untreated',
+      severity: 'info',
+      title: `${args.untreated} of ${args.total} attacks went untreated`,
+      detail:
+        'Attacks logged with no medication. Sometimes that is a choice, sometimes it means nothing available was worth taking — worth saying which.',
+    })
+  }
+
+  if (args.coverage < 0.6 && args.months >= 1) {
+    flags.push({
+      id: 'coverage',
+      severity: 'info',
+      title: `Only ${Math.round(args.coverage * 100)}% of days were logged`,
+      detail:
+        'Frequency figures assume unlogged days were headache-free, so they may understate the real total. Logging headache-free days as well makes the numbers firmer.',
+    })
+  }
+
+  return flags
 }
 
 /** Day-level cells for the calendar and the yearly heatmap. */

@@ -96,6 +96,9 @@ interface HeadViewProps {
   onRegionHover?: (region: HeadRegionId | null) => void
   interactive?: boolean
   className?: string
+  /** Overrides the pain-ramp fill, for maps that encode something else. */
+  fillFor?: (region: HeadRegionId) => string | null
+  labelFor?: (region: HeadRegionId) => string
 }
 
 function HeadView({
@@ -105,6 +108,8 @@ function HeadView({
   onRegionHover,
   interactive,
   className,
+  fillFor,
+  labelFor,
 }: HeadViewProps) {
   const outline = view === 'front' ? FRONT_OUTLINE : BACK_OUTLINE
   const regions = view === 'front' ? FRONT_REGIONS : BACK_REGIONS
@@ -135,8 +140,10 @@ function HeadView({
       <g clipPath={`url(#${clipId})`}>
         {regions.map(({ id, box }) => {
           const intensity = values.get(id)
-          const label = HEAD_REGION_LABEL[id]
-          const fill = intensity ? INTENSITY_VAR[intensity] : 'transparent'
+          const label = labelFor?.(id) ?? HEAD_REGION_LABEL[id]
+          const override = fillFor?.(id)
+          const fill =
+            override ?? (intensity ? INTENSITY_VAR[intensity] : 'transparent')
 
           const shared = {
             x: box.x,
@@ -149,7 +156,11 @@ function HeadView({
           }
 
           if (!interactive) {
-            return <rect key={id} {...shared} pointerEvents="none" />
+            return (
+              <rect key={id} {...shared} pointerEvents="none">
+                {override ? <title>{label}</title> : null}
+              </rect>
+            )
           }
 
           return (
@@ -190,18 +201,23 @@ function HeadView({
         pointerEvents="none"
       />
 
-      {/* Side markers sit on the diagram itself: the front and back views mirror
-          one another, and a caption underneath is too easy to misread. */}
+      {/* Side markers sit inside the silhouette, on the half they name. The two
+          views mirror one another, so a letter in the margin ends up next to
+          the neighbouring diagram's opposite letter and reads as a mistake. */}
       <g
         fill="var(--color-muted-foreground)"
+        stroke="var(--color-card)"
+        strokeWidth={3}
+        paintOrder="stroke"
         fontSize={15}
         fontWeight={700}
+        textAnchor="middle"
         pointerEvents="none"
       >
-        <text x={4} y={16} textAnchor="start">
+        <text x={62} y={74}>
           {view === 'front' ? 'R' : 'L'}
         </text>
-        <text x={196} y={16} textAnchor="end">
+        <text x={138} y={74}>
           {view === 'front' ? 'L' : 'R'}
         </text>
       </g>
@@ -301,6 +317,74 @@ export function HeadMapPreview({
           ) : null}
         </div>
       ))}
+    </div>
+  )
+}
+
+/**
+ * Where the pain lands across the whole history rather than in one attack.
+ *
+ * This encodes how *often* a region is affected, not how badly, so it uses the
+ * sequential single-hue ramp instead of the pain colours — a region that hurts
+ * constantly should not be mistaken for one that hurts severely.
+ */
+export function HeadMapFrequency({
+  counts,
+  totalEpisodes,
+  className,
+}: {
+  counts: Map<HeadRegionId, number>
+  totalEpisodes: number
+  className?: string
+}) {
+  const max = Math.max(1, ...counts.values())
+  const empty = new Map<HeadRegionId, Intensity>()
+
+  const fillFor = (region: HeadRegionId) => {
+    const count = counts.get(region) ?? 0
+    if (!count) return 'transparent'
+    // Five steps of the count ramp, floored at step 1 so any hit is visible.
+    const step = Math.max(1, Math.ceil((count / max) * 5))
+    return `var(--color-count-${step})`
+  }
+
+  const labelFor = (region: HeadRegionId) => {
+    const count = counts.get(region) ?? 0
+    const share = totalEpisodes ? Math.round((count / totalEpisodes) * 100) : 0
+    return `${HEAD_REGION_LABEL[region]}: ${count} of ${totalEpisodes} attacks (${share}%)`
+  }
+
+  const usesBack = BACK_REGION_IDS.some((id) => (counts.get(id) ?? 0) > 0)
+  const views = usesBack ? (['front', 'back'] as const) : (['front'] as const)
+
+  return (
+    <div className={cn('space-y-2', className)}>
+      <div className={cn('grid gap-3', views.length === 2 ? 'grid-cols-2' : '')}>
+        {views.map((view) => (
+          <div key={view} className="space-y-1">
+            <HeadView
+              view={view}
+              values={empty}
+              fillFor={fillFor}
+              labelFor={labelFor}
+            />
+            <div className="text-center text-[0.65rem] font-medium text-muted-foreground capitalize">
+              {view}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-center gap-1 text-[0.65rem] text-muted-foreground">
+        <span>Rarely</span>
+        {[1, 2, 3, 4, 5].map((step) => (
+          <span
+            key={step}
+            className="size-2.5 rounded-[3px]"
+            style={{ backgroundColor: `var(--color-count-${step})` }}
+          />
+        ))}
+        <span>Most attacks</span>
+      </div>
     </div>
   )
 }

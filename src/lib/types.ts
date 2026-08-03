@@ -169,6 +169,110 @@ export const EFFECTIVENESS_LABEL: Record<Effectiveness, string> = {
   5: 'Complete relief',
 }
 
+/**
+ * What kind of drug a medication is. This exists for one reason: published
+ * headache guidance sets different monthly limits on acute medication before
+ * frequent use itself starts driving headaches, and the limit depends on the
+ * class. Preventives are taken daily by design and are excluded from that count.
+ */
+export type MedicationClass =
+  | 'simple'
+  | 'combination'
+  | 'triptan'
+  | 'ergot'
+  | 'opioid'
+  | 'gepant'
+  | 'preventive'
+  | 'other'
+
+export const MEDICATION_CLASS_LABEL: Record<MedicationClass, string> = {
+  simple: 'Simple painkiller',
+  combination: 'Combination painkiller',
+  triptan: 'Triptan',
+  ergot: 'Ergotamine',
+  opioid: 'Opioid',
+  gepant: 'Gepant or ditan',
+  preventive: 'Preventive',
+  other: 'Other / not sure',
+}
+
+/**
+ * Days per month of acute use above which published guidance treats the
+ * medication itself as a possible driver of headaches. `null` means the class
+ * is not counted: preventives are meant to be daily, gepants are not associated
+ * with the pattern, and an unclassified drug should not raise a flag the user
+ * cannot interpret.
+ */
+export const OVERUSE_THRESHOLD_DAYS: Record<MedicationClass, number | null> = {
+  simple: 15,
+  combination: 10,
+  triptan: 10,
+  ergot: 10,
+  opioid: 10,
+  gepant: null,
+  preventive: null,
+  other: null,
+}
+
+/** Substring matches, longest first, used to guess a class from a typed name. */
+const CLASS_HINTS: [MedicationClass, string[]][] = [
+  [
+    'preventive',
+    [
+      'propranolol', 'topiramate', 'topamax', 'amitriptyline', 'nortriptyline',
+      'candesartan', 'valproate', 'depakote', 'erenumab', 'aimovig',
+      'fremanezumab', 'ajovy', 'galcanezumab', 'emgality', 'eptinezumab',
+      'vyepti', 'atogepant', 'qulipta', 'botox', 'onabotulinum', 'verapamil',
+      'flunarizine', 'metoprolol', 'riboflavin', 'magnesium', 'coenzyme',
+    ],
+  ],
+  [
+    'triptan',
+    [
+      'sumatriptan', 'imitrex', 'rizatriptan', 'maxalt', 'zolmitriptan',
+      'zomig', 'naratriptan', 'amerge', 'eletriptan', 'relpax', 'almotriptan',
+      'frovatriptan', 'treximet', 'triptan',
+    ],
+  ],
+  [
+    'gepant',
+    ['ubrogepant', 'ubrelvy', 'rimegepant', 'nurtec', 'lasmiditan', 'reyvow', 'zavegepant'],
+  ],
+  [
+    'opioid',
+    [
+      'codeine', 'co-codamol', 'cocodamol', 'tramadol', 'oxycodone', 'percocet',
+      'hydrocodone', 'vicodin', 'morphine', 'butalbital', 'fioricet', 'fiorinal',
+    ],
+  ],
+  ['ergot', ['ergotamine', 'cafergot', 'dihydroergotamine', 'migranal']],
+  [
+    'combination',
+    [
+      'excedrin', 'anadin', 'syndol', 'solpadeine', 'panadeine', 'midrin',
+      'migraleve', 'paramol',
+    ],
+  ],
+  [
+    'simple',
+    [
+      'ibuprofen', 'advil', 'motrin', 'nurofen', 'naproxen', 'aleve', 'aspirin',
+      'paracetamol', 'acetaminophen', 'tylenol', 'panadol', 'diclofenac',
+      'voltaren', 'ketorolac', 'indomethacin', 'celecoxib', 'mefenamic',
+    ],
+  ],
+]
+
+/** Best guess at a medication's class from its name; 'other' when unsure. */
+export function guessMedicationClass(name: string): MedicationClass {
+  const key = name.trim().toLowerCase()
+  if (!key) return 'other'
+  for (const [cls, hints] of CLASS_HINTS) {
+    if (hints.some((hint) => key.includes(hint))) return cls
+  }
+  return 'other'
+}
+
 export interface MedicationDose {
   id: string
   /** Free text so any medication can be logged, matched case-insensitively. */
@@ -259,14 +363,46 @@ export interface MedicationPreset {
   defaultUnit: DoseUnit
   /** Bumped on each use so the picker can surface favourites first. */
   useCount: number
+  /** Guessed from the name on first use; the user can correct it in Settings. */
+  medClass?: MedicationClass
 }
 
 export const DEFAULT_MEDICATIONS: readonly Omit<MedicationPreset, 'id'>[] = [
-  { name: 'Excedrin', defaultAmount: 2, defaultUnit: 'tablets', useCount: 0 },
-  { name: 'Advil', defaultAmount: 400, defaultUnit: 'mg', useCount: 0 },
-  { name: 'Ibuprofen', defaultAmount: 400, defaultUnit: 'mg', useCount: 0 },
-  { name: 'Tylenol', defaultAmount: 500, defaultUnit: 'mg', useCount: 0 },
-  { name: 'Naproxen', defaultAmount: 220, defaultUnit: 'mg', useCount: 0 },
+  {
+    name: 'Excedrin',
+    defaultAmount: 2,
+    defaultUnit: 'tablets',
+    useCount: 0,
+    medClass: 'combination',
+  },
+  {
+    name: 'Advil',
+    defaultAmount: 400,
+    defaultUnit: 'mg',
+    useCount: 0,
+    medClass: 'simple',
+  },
+  {
+    name: 'Ibuprofen',
+    defaultAmount: 400,
+    defaultUnit: 'mg',
+    useCount: 0,
+    medClass: 'simple',
+  },
+  {
+    name: 'Tylenol',
+    defaultAmount: 500,
+    defaultUnit: 'mg',
+    useCount: 0,
+    medClass: 'simple',
+  },
+  {
+    name: 'Naproxen',
+    defaultAmount: 220,
+    defaultUnit: 'mg',
+    useCount: 0,
+    medClass: 'simple',
+  },
 ]
 
 export type ThemePreference = 'light' | 'dark' | 'system'

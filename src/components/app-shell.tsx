@@ -15,7 +15,7 @@ const NAV = [
   { to: '/', label: 'Calendar', icon: CalendarDays },
   { to: '/timeline', label: 'Timeline', icon: Waypoints },
   { to: '/insights', label: 'Insights', icon: ChartColumnIncreasing },
-  { to: '/report', label: 'Report', icon: FileHeart },
+  { to: '/doctor', label: 'Doctor', icon: FileHeart },
 ] as const
 
 function isActive(path: string, to: string) {
@@ -62,7 +62,10 @@ export function AppShell({
         <main
           className={cn(
             'mx-auto w-full max-w-3xl flex-1 px-4 pt-4',
-            hideNav ? 'pb-8' : 'pb-28 md:pb-10',
+            // Clear the tab bar and, on an iPhone, the home indicator under it.
+            hideNav
+              ? 'pb-8'
+              : 'pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-10',
           )}
         >
           {children}
