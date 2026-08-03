@@ -38,13 +38,17 @@ its own last-dose time — "2 today · last 1h 35m ago". A foggy head double-dos
 and the question "can I take this again?" is answered by the button you are
 already looking at rather than by doing arithmetic.
 
-Nothing on that screen opens a form. Headache type, the aura checklist and a
-note are all one tap away behind **Add more**, writing straight to the entry,
-and can equally be left for later.
+Nothing on that screen opens a form. Behind one **Add more** tap sit headache
+type, the aura checklist, the head map, how well each dose worked, a medication
+that is not one of the presets, and a note — all writing straight to the entry,
+all skippable. It is there for whoever is well enough to use it.
 
 Comfort controls sit at the top of that screen and in Settings: a dimmer that
 goes darker than the phone's own brightness slider for photophobia, a text-size
-scale, and a reduce-motion switch. The dim overlay is deliberately
+scale, and a reduce-motion switch. Six colour presets sit alongside them —
+including warm low-blue tints, true black for OLED, and a near-colourless
+"quiet" option — because what is bearable to look at during an attack varies a
+lot from person to person. The dim overlay is deliberately
 click-through, so every control stays reachable at any darkness — including the
 one that undoes it.
 
@@ -82,7 +86,8 @@ that can show headaches, worst pain, or medication use.
 **For your doctor.** A tab built to be handed over or sent ahead of an
 appointment, in two levels of detail.
 
-*Overview* leads with the numbers that change treatment decisions: headache days
+*Overview* leads with the numbers that change treatment decisions, then charts
+headache and migraine days by month against the average pain trend: headache days
 per month, migraine days, acute medication days, and whether the pattern is
 episodic or chronic. Below that, a "worth discussing" list surfaces things the
 diary shows but a person is unlikely to spot — crossing the four-days-a-month
@@ -136,6 +141,14 @@ the urgent path records first and asks later, why attack mode has three controls
 rather than a form, and why dimming exists at all. Anything that needs thought —
 aura symptoms, exact times, how well a drug worked — is deliberately left for
 afterwards.
+
+**Six colour presets, each validated rather than eyeballed.** Every preset's
+pain ramp is checked with the same palette tooling as the default: adjacent
+levels clear ΔE 8 under simulated colour blindness and mild-vs-severe stays well
+past the floor, on that preset's own surface. Three of the first drafts failed
+that check and were re-derived. The "quiet" preset works because the ramp is
+monotone in lightness, so stripping the saturation costs appearance but not
+meaning.
 
 **Nothing is shown at a size that cannot be read during an attack.** The type
 scale is raised above the framework default and floored at 12px, which is

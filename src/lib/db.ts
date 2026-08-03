@@ -4,6 +4,8 @@ import {
   DEFAULT_SETTINGS,
   guessMedicationClass,
   type DayLog,
+  type DoseUnit,
+  type Effectiveness,
   type Episode,
   type Intensity,
   type MedicationClass,
@@ -112,17 +114,22 @@ export function allEpisodes(): Promise<Episode[]> {
 }
 
 /**
- * The episode still in progress, if any. Used by the home screen to offer
- * "end this headache" instead of starting a duplicate entry.
+ * The episode still in progress, or null when there is none.
+ *
+ * Null rather than undefined on purpose: callers use `undefined` to mean "the
+ * query has not answered yet", and the two states need different handling —
+ * see useOngoingEpisode.
  */
-export async function getOngoingEpisode(): Promise<Episode | undefined> {
+export async function getOngoingEpisode(): Promise<Episode | null> {
   const recent = await db.episodes
     .where('date')
     .between(dateKey(new Date(Date.now() - 3 * 86400000)), dateKey(), true, true)
     .toArray()
-  return recent
-    .filter((e) => !e.endTime)
-    .sort((a, b) => b.startTime.localeCompare(a.startTime))[0]
+  return (
+    recent
+      .filter((e) => !e.endTime)
+      .sort((a, b) => b.startTime.localeCompare(a.startTime))[0] ?? null
+  )
 }
 
 /* --------------------------------------------------------- attack mode --- */
@@ -204,7 +211,9 @@ export async function addDoseNow(
  */
 export async function patchEpisode(
   id: string,
-  patch: Partial<Pick<Episode, 'type' | 'auraSymptoms' | 'auraNotes' | 'notes'>>,
+  patch: Partial<
+    Pick<Episode, 'type' | 'auraSymptoms' | 'auraNotes' | 'notes' | 'painMap'>
+  >,
 ): Promise<void> {
   const episode = await db.episodes.get(id)
   if (!episode) return
@@ -212,6 +221,61 @@ export async function patchEpisode(
     ...episode,
     ...patch,
     updatedAt: new Date().toISOString(),
+  })
+}
+
+/**
+ * How well a dose worked, answered while it is still fresh. Recording it during
+ * the attack is the only time the answer is reliable.
+ */
+export async function setDoseEffectiveness(
+  episodeId: string,
+  doseId: string,
+  effectiveness: Effectiveness | undefined,
+): Promise<void> {
+  const episode = await db.episodes.get(episodeId)
+  if (!episode) return
+  await db.episodes.put({
+    ...episode,
+    medications: episode.medications.map((dose) =>
+      dose.id === doseId
+        ? {
+            ...dose,
+            effectiveness,
+            // Anything better than "no relief" implies relief arrived; stamp it
+            // now so time-to-relief has something to work from.
+            reliefAt:
+              effectiveness && effectiveness > 1
+                ? (dose.reliefAt ?? new Date().toISOString())
+                : undefined,
+          }
+        : dose,
+    ),
+    updatedAt: new Date().toISOString(),
+  })
+}
+
+/** A medication that is not one of the saved presets. */
+export async function addCustomDoseNow(
+  episodeId: string,
+  name: string,
+  amount: number,
+  unit: DoseUnit,
+): Promise<void> {
+  const episode = await db.episodes.get(episodeId)
+  if (!episode || !name.trim()) return
+  await saveEpisode({
+    ...episode,
+    medications: [
+      ...episode.medications,
+      {
+        id: uid(),
+        name: name.trim(),
+        amount,
+        unit,
+        takenAt: new Date().toISOString(),
+      },
+    ],
   })
 }
 

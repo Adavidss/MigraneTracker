@@ -1,15 +1,20 @@
 import { useEffect, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, updateSettings } from '@/lib/db'
-import { DEFAULT_SETTINGS, type Settings, type ThemePreference } from '@/lib/types'
+import {
+  DEFAULT_SETTINGS,
+  resolveThemePreset,
+  type Settings,
+  type ThemePreference,
+} from '@/lib/types'
 
 const THEME_KEY = 'mt.theme'
 
 /** Mirrors the choice into localStorage so index.html can apply it pre-paint. */
 export function applyTheme(preference: ThemePreference) {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const dark = preference === 'dark' || (preference === 'system' && prefersDark)
-  document.documentElement.classList.toggle('dark', dark)
+  const preset = resolveThemePreset(preference, prefersDark)
+  document.documentElement.dataset.theme = preset
   try {
     localStorage.setItem(THEME_KEY, preference)
   } catch {

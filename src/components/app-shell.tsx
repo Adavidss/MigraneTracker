@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import {
   Activity,
   CalendarDays,
@@ -10,7 +9,7 @@ import {
   Settings as SettingsIcon,
   Waypoints,
 } from 'lucide-react'
-import { getOngoingEpisode } from '@/lib/db'
+import { useOngoingEpisode } from '@/store/useOngoingEpisode'
 import { Link, useRoutePath } from '@/lib/router'
 import { cn } from '@/lib/utils'
 
@@ -85,7 +84,7 @@ export function AppShell({
  * it is "get me back to the screen I can use right now".
  */
 function useMainAction() {
-  const ongoing = useLiveQuery(getOngoingEpisode, [])
+  const ongoing = useOngoingEpisode()
   return ongoing
     ? { to: '/attack', label: 'Open attack', icon: Activity }
     : { to: '/log', label: 'Log headache', icon: Plus }

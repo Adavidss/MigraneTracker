@@ -2,20 +2,25 @@ import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Check, ChevronDown, ChevronLeft, Pill, SlidersHorizontal } from 'lucide-react'
 import {
+  addCustomDoseNow,
   addDoseNow,
   allMedications,
   endEpisodeNow,
-  getOngoingEpisode,
   patchEpisode,
+  setDoseEffectiveness,
   setEpisodeIntensityNow,
 } from '@/lib/db'
 import {
   AURA_SYMPTOMS,
+  DOSE_UNITS,
+  EFFECTIVENESS_LABEL,
   EPISODE_TYPE_LABEL,
   INTENSITIES,
   INTENSITY_LABEL,
   INTENSITY_VAR,
   type AuraSymptom,
+  type DoseUnit,
+  type Effectiveness,
   type Episode,
   type EpisodeType,
   type Intensity,
@@ -25,7 +30,9 @@ import {
 import { cn, formatTime, normalizeMedName } from '@/lib/utils'
 import { navigate } from '@/lib/router'
 import { useSettings } from '@/store/useSettings'
+import { useOngoingEpisode } from '@/store/useOngoingEpisode'
 import { ComfortControls } from '@/components/comfort'
+import { HeadMap } from '@/components/head-map'
 
 /**
  * The screen for someone who is having a migraine right now.
@@ -41,7 +48,7 @@ import { ComfortControls } from '@/components/comfort'
  */
 export default function Attack() {
   const settings = useSettings()
-  const episode = useLiveQuery(getOngoingEpisode, [])
+  const episode = useOngoingEpisode()
   const presets = useLiveQuery(allMedications, []) ?? []
   const [elapsed, setElapsed] = useState('')
   const [moreOpen, setMoreOpen] = useState(false)
@@ -219,6 +226,74 @@ export default function Attack() {
                 </div>
               </Group>
 
+              <Group label="Where it hurts">
+                <HeadMap
+                  points={episode.painMap}
+                  brush={current}
+                  onChange={(painMap) => patchEpisode(episode.id, { painMap })}
+                  className="mx-auto max-w-xs"
+                />
+              </Group>
+
+              {/* Only worth asking while it is still fresh. */}
+              {episode.medications.length ? (
+                <Group label="Did it help?">
+                  <div className="space-y-3">
+                    {episode.medications.map((dose) => (
+                      <div key={dose.id}>
+                        <p className="mb-1.5 text-base">
+                          {dose.name}
+                          <span className="text-muted-foreground">
+                            {' '}
+                            at {formatTime(dose.takenAt, settings.use24HourTime)}
+                          </span>
+                        </p>
+                        <div className="grid grid-cols-5 gap-1.5">
+                          {([1, 2, 3, 4, 5] as Effectiveness[]).map((score) => {
+                            const active = dose.effectiveness === score
+                            return (
+                              <button
+                                key={score}
+                                type="button"
+                                aria-pressed={active}
+                                aria-label={`${dose.name}: ${EFFECTIVENESS_LABEL[score]}`}
+                                onClick={() =>
+                                  setDoseEffectiveness(
+                                    episode.id,
+                                    dose.id,
+                                    active ? undefined : score,
+                                  )
+                                }
+                                className={cn(
+                                  'min-h-14 rounded-xl text-lg font-semibold',
+                                  active
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground',
+                                )}
+                              >
+                                {score}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        {dose.effectiveness ? (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {EFFECTIVENESS_LABEL[dose.effectiveness]}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    1 is no relief, 5 is complete relief.
+                  </p>
+                </Group>
+              ) : null}
+
+              <Group label="Another medication">
+                <CustomDose episodeId={episode.id} />
+              </Group>
+
               <Group label="Note">
                 <textarea
                   rows={3}
@@ -320,6 +395,68 @@ function MedButton({
         ) : null}
       </span>
     </button>
+  )
+}
+
+/** Logging something that is not one of the saved presets, without a form. */
+function CustomDose({ episodeId }: { episodeId: string }) {
+  const [name, setName] = useState('')
+  const [amount, setAmount] = useState('1')
+  const [unit, setUnit] = useState<DoseUnit>('tablets')
+
+  const field =
+    'min-h-14 rounded-xl border border-input bg-card px-3 text-base focus:border-ring focus:outline-none'
+
+  return (
+    <div className="space-y-2">
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Medication name"
+        aria-label="Medication name"
+        className={cn(field, 'w-full')}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="any"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          aria-label="Amount"
+          className={field}
+        />
+        <select
+          value={unit}
+          onChange={(e) => setUnit(e.target.value as DoseUnit)}
+          aria-label="Unit"
+          className={field}
+        >
+          {DOSE_UNITS.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
+      </div>
+      <button
+        type="button"
+        disabled={!name.trim()}
+        onClick={async () => {
+          await addCustomDoseNow(
+            episodeId,
+            name,
+            Number.parseFloat(amount) || 0,
+            unit,
+          )
+          setName('')
+        }}
+        className="min-h-14 w-full rounded-xl bg-muted text-base font-medium text-muted-foreground disabled:opacity-40"
+      >
+        Add it
+      </button>
+    </div>
   )
 }
 

@@ -20,7 +20,6 @@ import {
 import {
   dayLogsInRange,
   episodesInRange,
-  getOngoingEpisode,
   markHeadacheFree,
   startEpisodeNow,
   unmarkHeadacheFree,
@@ -35,6 +34,7 @@ import { IntensityLegend } from '@/components/intensity'
 import { Link, navigate } from '@/lib/router'
 import { dateKey, formatDuration, formatTime, round } from '@/lib/utils'
 import { useSettings } from '@/store/useSettings'
+import { useOngoingEpisode } from '@/store/useOngoingEpisode'
 import { toast } from '@/store/useToast'
 import { EPISODE_TYPE_LABEL, INTENSITY_VAR } from '@/lib/types'
 
@@ -99,7 +99,7 @@ export default function Home() {
 
   const today = dateKey()
   const todayCell = days.get(today)
-  const ongoing = useLiveQuery(getOngoingEpisode, [episodes.length])
+  const ongoing = useOngoingEpisode()
 
   const summary = useMemo(
     () => computeSummary({ episodes, dayLogs: logs, from, to }),

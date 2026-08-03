@@ -21,13 +21,13 @@
       // wrong colour scheme on load.
       try {
         var saved = localStorage.getItem('mt.theme')
-        var dark =
-          saved === 'dark' ||
-          ((!saved || saved === 'system') &&
-            window.matchMedia('(prefers-color-scheme: dark)').matches)
-        document.documentElement.classList.toggle('dark', dark)
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        var preset =
+          !saved || saved === 'system' ? (prefersDark ? 'dark' : 'light') : saved
+        document.documentElement.dataset.theme = preset
       } catch (e) {
-        /* private mode — fall back to the light theme */
+        /* private mode — fall back to the light preset */
+        document.documentElement.dataset.theme = 'light'
       }
     </script>
   </head>

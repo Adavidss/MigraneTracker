@@ -405,7 +405,48 @@ export const DEFAULT_MEDICATIONS: readonly Omit<MedicationPreset, 'id'>[] = [
   },
 ]
 
-export type ThemePreference = 'light' | 'dark' | 'system'
+/**
+ * Colour presets, not just light and dark. What is bearable to look at during
+ * an attack varies a lot: the warm presets cut short-wavelength light, black
+ * emits least on an OLED screen, and quiet strips saturation for anyone who
+ * finds colour itself hard going.
+ */
+export type ThemePreset =
+  | 'light'
+  | 'dark'
+  | 'black'
+  | 'warm-light'
+  | 'warm-dark'
+  | 'quiet'
+
+export type ThemePreference = ThemePreset | 'system'
+
+export const THEME_PRESETS: readonly {
+  id: ThemePreset
+  label: string
+  hint: string
+  isDark: boolean
+}[] = [
+  { id: 'light', label: 'Light', hint: 'Default', isDark: false },
+  { id: 'dark', label: 'Dark', hint: 'Default', isDark: true },
+  { id: 'black', label: 'Black', hint: 'Least light on OLED', isDark: true },
+  { id: 'warm-dark', label: 'Warm dark', hint: 'Amber, low blue', isDark: true },
+  { id: 'warm-light', label: 'Warm light', hint: 'Paper, low blue', isDark: false },
+  { id: 'quiet', label: 'Quiet', hint: 'Almost no colour', isDark: true },
+]
+
+export const DARK_PRESETS: ReadonlySet<string> = new Set(
+  THEME_PRESETS.filter((p) => p.isDark).map((p) => p.id),
+)
+
+/** Resolves `system` against the OS setting; anything else is already a preset. */
+export function resolveThemePreset(
+  preference: ThemePreference,
+  prefersDark: boolean,
+): ThemePreset {
+  if (preference === 'system') return prefersDark ? 'dark' : 'light'
+  return preference
+}
 
 export type TextScale = 'normal' | 'large' | 'larger'
 

@@ -30,6 +30,7 @@ import {
   HEAD_REGIONS,
   MEDICATION_CLASS_LABEL,
   OVERUSE_THRESHOLD_DAYS,
+  THEME_PRESETS,
   type DoseUnit,
   type EpisodeType,
   type HeadRegionId,
@@ -38,6 +39,7 @@ import {
 } from '@/lib/types'
 import { useSettings } from '@/store/useSettings'
 import { toast } from '@/store/useToast'
+import { cn } from '@/lib/utils'
 import { AppShell } from '@/components/app-shell'
 import { ComfortControls } from '@/components/comfort'
 import { Button } from '@/components/ui/button'
@@ -46,11 +48,79 @@ import { Field, Input, Select, Switch } from '@/components/ui/field'
 import { ChipGroup, ChipToggles, Collapsible, Section } from '@/components/ui/section'
 import { ConfirmModal } from '@/components/ui/modal'
 
-const THEMES: { value: ThemePreference; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
-]
+/**
+ * Each preset is shown as a working swatch rather than a name, because "warm
+ * dark" means nothing until you see it — and choosing one is something people
+ * do while already uncomfortable.
+ */
+function ThemePicker({ value }: { value: ThemePreference }) {
+  return (
+    <div role="radiogroup" aria-label="Colour preset" className="grid grid-cols-2 gap-2">
+      <ThemeOption
+        id="system"
+        label="Match device"
+        hint="Follows light or dark"
+        active={value === 'system'}
+      />
+      {THEME_PRESETS.map((preset) => (
+        <ThemeOption
+          key={preset.id}
+          id={preset.id}
+          label={preset.label}
+          hint={preset.hint}
+          active={value === preset.id}
+        />
+      ))}
+    </div>
+  )
+}
+
+function ThemeOption({
+  id,
+  label,
+  hint,
+  active,
+}: {
+  id: ThemePreference
+  label: string
+  hint: string
+  active: boolean
+}) {
+  // `system` has no palette of its own, so the swatch borrows the current one.
+  const scope = id === 'system' ? undefined : id
+
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={() => updateSettings({ theme: id })}
+      className={cn(
+        'flex min-h-20 items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors',
+        active ? 'border-primary' : 'border-border',
+      )}
+    >
+      <span
+        data-theme={scope}
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background"
+      >
+        <span className="flex gap-0.5" aria-hidden>
+          {[1, 3, 5].map((level) => (
+            <span
+              key={level}
+              className="h-5 w-1.5 rounded-full"
+              style={{ backgroundColor: `var(--color-pain-${level})` }}
+            />
+          ))}
+        </span>
+      </span>
+      <span className="min-w-0">
+        <span className="block text-base font-medium">{label}</span>
+        <span className="block text-xs text-muted-foreground">{hint}</span>
+      </span>
+    </button>
+  )
+}
 
 /**
  * iOS never fires an install prompt, so on iPhone the only way to get the app
@@ -182,13 +252,8 @@ export default function Settings() {
           </p>
         </Section>
 
-        <Section title="Appearance">
-          <ChipGroup
-            ariaLabel="Theme"
-            value={settings.theme}
-            onChange={(theme) => updateSettings({ theme })}
-            options={THEMES.map((t) => ({ value: t.value, label: t.label }))}
-          />
+        <Section title="Colours" description="Pick whatever is easiest to look at.">
+          <ThemePicker value={settings.theme} />
           <Card className="px-3 py-1">
             <Switch
               label="24-hour time"

@@ -1,9 +1,21 @@
 import { useMemo } from 'react'
 import { AlertTriangle, Info, TrendingDown, TrendingUp } from 'lucide-react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import type { ClinicalProfile, MedicationDayUse, StatsInput } from '@/lib/stats'
 import {
   computeAuraCounts,
   computeMedicationStats,
+  computeMonthly,
   computeSummary,
   filterToWindow,
 } from '@/lib/stats'
@@ -19,6 +31,12 @@ import {
 import { episodeDurationMinutes, hasAura } from '@/lib/episode'
 import { cn, formatDayShort, formatDuration, formatTime, round } from '@/lib/utils'
 import { Card } from './ui/card'
+import {
+  AXIS_PROPS,
+  ChartLegend,
+  ChartTooltip,
+  GRID_PROPS,
+} from './chart-kit'
 import { HeadMapFrequency } from './head-map'
 import { IntensityDot } from './intensity'
 
@@ -68,6 +86,34 @@ export function DoctorOverview({
         .map(([region, count]) => ({ region, count })),
     [regionCounts],
   )
+
+  /**
+   * Headache days split into migraine and everything else. Days rather than
+   * attacks, because days per month is the figure treatment decisions turn on,
+   * and a day with both counts once — as a migraine day.
+   */
+  const monthly = useMemo(() => {
+    const base = computeMonthly(input)
+    const migraineDays = new Map<string, Set<string>>()
+    const allDays = new Map<string, Set<string>>()
+
+    for (const episode of windowed) {
+      const month = episode.date.slice(0, 7)
+      if (!allDays.has(month)) allDays.set(month, new Set())
+      allDays.get(month)!.add(episode.date)
+
+      if (episode.type === 'migraine' || episode.type === 'migraine-aura') {
+        if (!migraineDays.has(month)) migraineDays.set(month, new Set())
+        migraineDays.get(month)!.add(episode.date)
+      }
+    }
+
+    return base.map((month) => {
+      const migraine = migraineDays.get(month.month)?.size ?? 0
+      const total = allDays.get(month.month)?.size ?? 0
+      return { ...month, migraineDays: migraine, otherDays: Math.max(0, total - migraine) }
+    })
+  }, [input, windowed])
 
   const recent = useMemo(
     () =>
@@ -182,6 +228,110 @@ export function DoctorOverview({
               </li>
             ))}
           </ul>
+        </section>
+      ) : null}
+
+      {monthly.length > 1 ? (
+        <section className="space-y-2 print-avoid-break">
+          <h3 className="text-sm font-semibold tracking-tight">Trend</h3>
+
+          <Card className="p-4">
+            <p className="mb-1 text-sm font-medium">Days with a headache</p>
+            <ChartLegend
+              className="mb-2"
+              items={[
+                { label: 'Migraine days', color: 'var(--color-series-1)' },
+                { label: 'Other headache days', color: 'var(--color-series-2)' },
+              ]}
+            />
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={monthly} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                <CartesianGrid {...GRID_PROPS} />
+                <XAxis dataKey="label" {...AXIS_PROPS} />
+                <YAxis allowDecimals={false} {...AXIS_PROPS} />
+                <Tooltip
+                  cursor={{ fill: 'var(--color-muted)', opacity: 0.5 }}
+                  content={({ active, payload, label }) =>
+                    active && payload?.length ? (
+                      <ChartTooltip
+                        title={label as string}
+                        rows={[
+                          {
+                            label: 'Migraine days',
+                            value: payload[0]?.payload?.migraineDays ?? 0,
+                            color: 'var(--color-series-1)',
+                          },
+                          {
+                            label: 'Other headache days',
+                            value: payload[0]?.payload?.otherDays ?? 0,
+                            color: 'var(--color-series-2)',
+                          },
+                          {
+                            label: 'Attacks',
+                            value: payload[0]?.payload?.episodes ?? 0,
+                          },
+                        ]}
+                      />
+                    ) : null
+                  }
+                />
+                <Bar
+                  dataKey="migraineDays"
+                  stackId="d"
+                  fill="var(--color-series-1)"
+                  stroke="var(--color-card)"
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                />
+                <Bar
+                  dataKey="otherDays"
+                  stackId="d"
+                  fill="var(--color-series-2)"
+                  stroke="var(--color-card)"
+                  strokeWidth={2}
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={false}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+
+          <Card className="p-4">
+            <p className="mb-2 text-sm font-medium">Average pain each month</p>
+            <ResponsiveContainer width="100%" height={150}>
+              <LineChart data={monthly} margin={{ top: 6, right: 8, left: -26, bottom: 0 }}>
+                <CartesianGrid {...GRID_PROPS} />
+                <XAxis dataKey="label" {...AXIS_PROPS} />
+                <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} {...AXIS_PROPS} />
+                <Tooltip
+                  cursor={{ stroke: 'var(--color-border)' }}
+                  content={({ active, payload, label }) =>
+                    active && payload?.length ? (
+                      <ChartTooltip
+                        title={label as string}
+                        rows={[
+                          {
+                            label: 'Average pain',
+                            value: payload[0]?.value ?? '—',
+                            color: 'var(--color-series-1)',
+                          },
+                        ]}
+                      />
+                    ) : null
+                  }
+                />
+                <Line
+                  type="monotone"
+                  dataKey="averageIntensity"
+                  stroke="var(--color-series-1)"
+                  strokeWidth={2}
+                  dot={{ r: 3, strokeWidth: 0, fill: 'var(--color-series-1)' }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
         </section>
       ) : null}
 
