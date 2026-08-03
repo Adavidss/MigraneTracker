@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, updateSettings } from '@/lib/db'
 import { DEFAULT_SETTINGS, type Settings, type ThemePreference } from '@/lib/types'
@@ -27,7 +27,13 @@ export function useSettingsQuery(): Settings | undefined {
 
 export function useSettings(): Settings {
   const settings = useSettingsQuery()
-  const resolved = settings ?? DEFAULT_SETTINGS
+  // Merged over the defaults, never substituted for them: a row written before
+  // a setting existed is missing that key, and an undefined dim level or text
+  // scale reaching the DOM is worse than a wrong one.
+  const resolved = useMemo<Settings>(
+    () => ({ ...DEFAULT_SETTINGS, ...(settings ?? {}) }),
+    [settings],
+  )
 
   useEffect(() => {
     applyTheme(resolved.theme)

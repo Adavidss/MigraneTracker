@@ -15,14 +15,14 @@ import {
   Plus,
   Search,
   Settings as SettingsIcon,
-  Square,
+  Zap,
 } from 'lucide-react'
 import {
   dayLogsInRange,
   episodesInRange,
   getOngoingEpisode,
   markHeadacheFree,
-  saveEpisode,
+  startEpisodeNow,
   unmarkHeadacheFree,
 } from '@/lib/db'
 import { computeSummary } from '@/lib/stats'
@@ -36,7 +36,7 @@ import { Link, navigate } from '@/lib/router'
 import { dateKey, formatDuration, formatTime, round } from '@/lib/utils'
 import { useSettings } from '@/store/useSettings'
 import { toast } from '@/store/useToast'
-import { EPISODE_TYPE_LABEL } from '@/lib/types'
+import { EPISODE_TYPE_LABEL, INTENSITY_VAR } from '@/lib/types'
 
 /** Calendar data for one month, keyed by day. */
 function useMonthData(month: Date) {
@@ -94,6 +94,7 @@ function useMonthData(month: Date) {
 export default function Home() {
   const settings = useSettings()
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
+  const [starting, setStarting] = useState(false)
   const { days, episodes, logs, from, to } = useMonthData(month)
 
   const today = dateKey()
@@ -107,10 +108,17 @@ export default function Home() {
 
   const atCurrentMonth = format(month, 'yyyy-MM') === format(new Date(), 'yyyy-MM')
 
-  const endNow = async () => {
-    if (!ongoing) return
-    await saveEpisode({ ...ongoing, endTime: new Date().toISOString() })
-    toast.success('Marked as ended')
+  const startNow = async () => {
+    setStarting(true)
+    try {
+      await startEpisodeNow()
+      navigate('/attack')
+    } catch (error) {
+      console.error(error)
+      toast.error('Could not start. Nothing was saved.')
+    } finally {
+      setStarting(false)
+    }
   }
 
   const toggleClearDay = async () => {
@@ -152,43 +160,62 @@ export default function Home() {
     >
       <div className="space-y-5">
         {ongoing ? (
-          <Card className="border-primary/40 bg-accent/60 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-accent-foreground">
-                  {EPISODE_TYPE_LABEL[ongoing.type]} in progress
-                </p>
-                <p className="mt-0.5 text-xs text-accent-foreground/80">
-                  Started {formatTime(ongoing.startTime, settings.use24HourTime)} ·
-                  level {ongoing.intensity}
-                </p>
-              </div>
-              <Button size="sm" onClick={endNow}>
-                <Square /> End now
+          /* One tap back into attack mode, and nothing to read first. */
+          <button
+            type="button"
+            onClick={() => navigate('/attack')}
+            className="flex w-full items-center gap-4 rounded-2xl bg-accent p-5 text-left text-accent-foreground"
+          >
+            <span
+              className="size-3 shrink-0 rounded-full"
+              style={{ backgroundColor: INTENSITY_VAR[ongoing.intensity] }}
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-lg font-semibold">
+                {EPISODE_TYPE_LABEL[ongoing.type]} in progress
+              </span>
+              <span className="mt-0.5 block text-sm opacity-80">
+                Since {formatTime(ongoing.startTime, settings.use24HourTime)} · tap
+                to update or end it
+              </span>
+            </span>
+            <ChevronRight className="size-6 shrink-0 opacity-70" />
+          </button>
+        ) : (
+          <div className="space-y-2">
+            {/* The urgent path: no form, no decisions. It records the headache
+                immediately and opens the screen built for using mid-attack. */}
+            <Button
+              size="lg"
+              disabled={starting}
+              onClick={startNow}
+              className="h-20 w-full text-xl font-semibold"
+            >
+              <Zap className="size-6" />
+              {starting ? 'Starting…' : 'Headache now'}
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="h-14"
+                onClick={() => navigate(`/log?date=${today}`)}
+              >
+                <Plus /> Add details
+              </Button>
+              <Button
+                variant={todayCell?.headacheFree ? 'accent' : 'outline'}
+                className="h-14"
+                disabled={!!todayCell && todayCell.episodes > 0}
+                onClick={toggleClearDay}
+              >
+                <CheckCircle2 />
+                {todayCell?.headacheFree ? 'Clear day ✓' : 'No headache'}
               </Button>
             </div>
-          </Card>
-        ) : null}
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            size="lg"
-            onClick={() => navigate(`/log?date=${today}`)}
-            className="h-16"
-          >
-            <Plus /> Log headache
-          </Button>
-          <Button
-            size="lg"
-            variant={todayCell?.headacheFree ? 'accent' : 'outline'}
-            className="h-16"
-            disabled={!!todayCell && todayCell.episodes > 0}
-            onClick={toggleClearDay}
-          >
-            <CheckCircle2 />
-            {todayCell?.headacheFree ? 'Clear day ✓' : 'No headache'}
-          </Button>
-        </div>
+          </div>
+        )}
 
         <Card>
           <div className="flex items-center justify-between px-3 py-2.5">

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import {
+  Activity,
   CalendarDays,
   ChartColumnIncreasing,
   FileHeart,
@@ -8,6 +10,7 @@ import {
   Settings as SettingsIcon,
   Waypoints,
 } from 'lucide-react'
+import { getOngoingEpisode } from '@/lib/db'
 import { Link, useRoutePath } from '@/lib/router'
 import { cn } from '@/lib/utils'
 
@@ -77,8 +80,21 @@ export function AppShell({
   )
 }
 
+/**
+ * While an attack is in progress the main action is not "log something new",
+ * it is "get me back to the screen I can use right now".
+ */
+function useMainAction() {
+  const ongoing = useLiveQuery(getOngoingEpisode, [])
+  return ongoing
+    ? { to: '/attack', label: 'Open attack', icon: Activity }
+    : { to: '/log', label: 'Log headache', icon: Plus }
+}
+
 /** Persistent rail on tablet and desktop. */
 function SideNav({ path }: { path: string }) {
+  const action = useMainAction()
+  const ActionIcon = action.icon
   return (
     <nav
       data-app-nav
@@ -91,11 +107,11 @@ function SideNav({ path }: { path: string }) {
       </div>
 
       <Link
-        to="/log"
+        to={action.to}
         className="mb-2 flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 font-medium text-primary-foreground transition-opacity hover:opacity-90"
       >
-        <Plus className="size-5" />
-        Log headache
+        <ActionIcon className="size-5" />
+        {action.label}
       </Link>
 
       {NAV.map(({ to, label, icon: Icon }) => (
@@ -151,6 +167,8 @@ function SideNav({ path }: { path: string }) {
 function BottomNav({ path }: { path: string }) {
   const left = NAV.slice(0, 2)
   const right = NAV.slice(2)
+  const action = useMainAction()
+  const ActionIcon = action.icon
 
   return (
     <nav
@@ -165,11 +183,11 @@ function BottomNav({ path }: { path: string }) {
 
         <div className="flex justify-center">
           <Link
-            to="/log"
-            aria-label="Log a headache"
-            className="-mt-5 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95"
+            to={action.to}
+            aria-label={action.label}
+            className="-mt-5 flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95"
           >
-            <Plus className="size-7" />
+            <ActionIcon className="size-8" />
           </Link>
         </div>
 

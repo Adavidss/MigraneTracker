@@ -5,6 +5,7 @@ import {
   guessMedicationClass,
   type DayLog,
   type Episode,
+  type Intensity,
   type MedicationClass,
   type MedicationPreset,
   type Settings,
@@ -54,7 +55,9 @@ export async function initDb(): Promise<void> {
 /* ------------------------------------------------------------- settings --- */
 
 export async function getSettings(): Promise<Settings> {
-  return (await db.settings.get('settings')) ?? DEFAULT_SETTINGS
+  // Merged, not substituted: rows written before a setting existed lack the key.
+  const stored = await db.settings.get('settings')
+  return { ...DEFAULT_SETTINGS, ...(stored ?? {}) }
 }
 
 export async function updateSettings(patch: Partial<Settings>): Promise<void> {
@@ -120,6 +123,89 @@ export async function getOngoingEpisode(): Promise<Episode | undefined> {
   return recent
     .filter((e) => !e.endTime)
     .sort((a, b) => b.startTime.localeCompare(a.startTime))[0]
+}
+
+/* --------------------------------------------------------- attack mode --- */
+
+/**
+ * The whole point of these four helpers is that each is a single tap during an
+ * attack, when reading and precise aiming are hard. Everything else about the
+ * entry can be filled in afterwards.
+ */
+
+/** Starts an episode from the saved defaults, right now. */
+export async function startEpisodeNow(): Promise<string> {
+  const settings = await getSettings()
+  const now = new Date().toISOString()
+  return saveEpisode({
+    date: dateKey(),
+    startTime: now,
+    type: settings.defaultType,
+    intensity: 3,
+    painMap: settings.defaultRegions.map((region) => ({ region, intensity: 3 })),
+    auraSymptoms: [],
+    medications: [],
+    progression: [],
+  })
+}
+
+/**
+ * Records how bad it is right now. Each change also lands in the progression,
+ * so simply using the app during an attack builds the pain curve for free.
+ */
+export async function setEpisodeIntensityNow(
+  id: string,
+  intensity: Intensity,
+): Promise<void> {
+  const episode = await db.episodes.get(id)
+  if (!episode) return
+
+  const now = new Date().toISOString()
+  const progression = [
+    ...episode.progression,
+    { id: uid(), at: now, intensity },
+  ]
+
+  await db.episodes.put({
+    ...episode,
+    progression,
+    // `intensity` is the peak, so it only ever climbs.
+    intensity: (Math.max(episode.intensity, intensity) as Intensity),
+    updatedAt: now,
+  })
+}
+
+export async function addDoseNow(
+  id: string,
+  preset: Pick<MedicationPreset, 'name' | 'defaultAmount' | 'defaultUnit'>,
+): Promise<void> {
+  const episode = await db.episodes.get(id)
+  if (!episode) return
+
+  const now = new Date().toISOString()
+  await saveEpisode({
+    ...episode,
+    medications: [
+      ...episode.medications,
+      {
+        id: uid(),
+        name: preset.name,
+        amount: preset.defaultAmount,
+        unit: preset.defaultUnit,
+        takenAt: now,
+      },
+    ],
+  })
+}
+
+export async function endEpisodeNow(id: string): Promise<void> {
+  const episode = await db.episodes.get(id)
+  if (!episode) return
+  await db.episodes.put({
+    ...episode,
+    endTime: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  })
 }
 
 /* ------------------------------------------------------------- day logs --- */

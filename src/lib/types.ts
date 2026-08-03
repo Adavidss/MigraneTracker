@@ -407,6 +407,14 @@ export const DEFAULT_MEDICATIONS: readonly Omit<MedicationPreset, 'id'>[] = [
 
 export type ThemePreference = 'light' | 'dark' | 'system'
 
+export type TextScale = 'normal' | 'large' | 'larger'
+
+export const TEXT_SCALE_FACTOR: Record<TextScale, number> = {
+  normal: 1,
+  large: 1.15,
+  larger: 1.3,
+}
+
 export interface Settings {
   /** Single-row table; always `'settings'`. */
   id: 'settings'
@@ -420,6 +428,17 @@ export interface Settings {
   /** Shown on the printable doctor summary. */
   patientName?: string
   use24HourTime: boolean
+
+  /* --- Comfort. All three exist because this app gets used mid-attack. --- */
+
+  /**
+   * Extra dimming, 0 to 0.8, applied as an overlay. Phones do not go dark
+   * enough for photophobia at their lowest brightness.
+   */
+  dimLevel: number
+  textScale: TextScale
+  /** Overrides the OS setting; movement is nauseating during an attack. */
+  reduceMotion: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -428,7 +447,12 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultRegions: ['temporal-left'],
   defaultType: 'migraine',
   use24HourTime: false,
+  dimLevel: 0,
+  textScale: 'normal',
+  reduceMotion: false,
 }
+
+export const MAX_DIM = 0.8
 
 /** Shape of a full JSON backup, versioned so imports can be validated. */
 export interface BackupFile {

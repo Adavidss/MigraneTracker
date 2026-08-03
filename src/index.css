@@ -303,6 +303,8 @@
   }
 }
 
+/* Movement is nauseating during a migraine, so this is available as an app
+   setting as well as honouring the OS one. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -311,4 +313,13 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

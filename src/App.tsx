@@ -1,12 +1,14 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
-import { initDb } from '@/lib/db'
-import { matchPath, useRoutePath } from '@/lib/router'
+import { getOngoingEpisode, initDb } from '@/lib/db'
+import { matchPath, navigate, useRoutePath } from '@/lib/router'
 import { useSettings } from '@/store/useSettings'
 import { Toaster } from '@/components/ui/toaster'
+import { DimOverlay, useComfort } from '@/components/comfort'
 import Home from '@/routes/Home'
 import LogEpisode from '@/routes/LogEpisode'
 import DayDetail from '@/routes/DayDetail'
+import Attack from '@/routes/Attack'
 
 // Charting and PDF generation are only needed on a few screens, so they load
 // on demand rather than blocking the first paint.
@@ -36,6 +38,8 @@ function Router() {
 
   const base = path.split('?')[0]
   switch (base) {
+    case '/attack':
+      return <Attack />
     case '/log':
       return <LogEpisode />
     case '/timeline':
@@ -60,7 +64,8 @@ function Router() {
 export default function App() {
   const [ready, setReady] = useState(false)
   // Reads settings and keeps the theme class on <html> in sync.
-  useSettings()
+  const settings = useSettings()
+  useComfort(settings)
 
   useEffect(() => {
     initDb()
@@ -69,6 +74,26 @@ export default function App() {
       })
       .finally(() => setReady(true))
   }, [])
+
+  /**
+   * Someone opening the app during an attack wants the screen built for that,
+   * not the calendar. Only on the first load, and only from the home route, so
+   * navigating to the calendar afterwards is never fought.
+   */
+  const redirected = useRef(false)
+  useEffect(() => {
+    if (!ready || redirected.current) return
+    redirected.current = true
+    if (window.location.hash.replace(/^#/, '') !== '') return
+
+    getOngoingEpisode()
+      .then((episode) => {
+        if (episode) navigate('/attack', { replace: true })
+      })
+      .catch(() => {
+        /* Falling through to the calendar is a fine outcome. */
+      })
+  }, [ready])
 
   // Deep links land mid-page otherwise.
   const path = useRoutePath()
@@ -84,6 +109,7 @@ export default function App() {
         <Router />
       </Suspense>
       <Toaster />
+      <DimOverlay level={settings.dimLevel} />
     </>
   )
 }

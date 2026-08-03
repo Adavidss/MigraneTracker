@@ -39,6 +39,7 @@ import {
 import { useSettings } from '@/store/useSettings'
 import { toast } from '@/store/useToast'
 import { AppShell } from '@/components/app-shell'
+import { ComfortControls } from '@/components/comfort'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input, Select, Switch } from '@/components/ui/field'
@@ -160,6 +161,26 @@ export default function Settings() {
         </Card>
 
         <InstallHint />
+
+        <Section
+          title="Comfort"
+          description="For using the app during an attack. Also on the attack screen itself."
+        >
+          <ComfortControls settings={settings} compact />
+          <Card className="divide-y divide-border px-3">
+            <Switch
+              label="Reduce motion"
+              description="Removes every animation and transition"
+              checked={settings.reduceMotion}
+              onCheckedChange={(reduceMotion) => updateSettings({ reduceMotion })}
+            />
+          </Card>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Dimming goes darker than your phone’s own brightness slider allows.
+            It stays on until you turn it down, so remember it is there if the
+            screen looks wrong later.
+          </p>
+        </Section>
 
         <Section title="Appearance">
           <ChipGroup

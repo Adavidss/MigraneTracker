@@ -23,6 +23,27 @@ That backup is the only copy that survives.
 
 ## Features
 
+**Attack mode.** The screen for someone who is having a migraine right now, and
+the reason the rest of the app can afford to be detailed.
+
+**Headache now** on the home screen records the attack immediately from your
+saved defaults — no form, no decisions — and opens a stripped screen with three
+things on it, each one tap: how bad it is, a dose taken, and it's over. Targets
+are enormous and sit at the bottom where a thumb already is. Changing the pain
+level quietly records a reading, so the pain curve builds itself just by using
+the app. The time since your last dose is shown in words, because a foggy head
+double-doses.
+
+Comfort controls sit at the top of that screen and in Settings: a dimmer that
+goes darker than the phone's own brightness slider for photophobia, a text-size
+scale, and a reduce-motion switch. The dim overlay is deliberately
+click-through, so every control stays reachable at any darkness — including the
+one that undoes it.
+
+If an attack is running when you open the app, it opens there. Everything else
+about the entry can be filled in from the calendar once you feel well enough to
+care.
+
 **Logging.** Pain level 1–5, an interactive head map, headache type, start and
 end time, aura symptoms, unlimited medication doses with times, how well each
 one worked, optional pain readings over the course of the episode, and notes.
@@ -101,6 +122,13 @@ cannot make one. Medication classes are guessed from the name and correctable
 in Settings, since the limit depends on the class. A trend is only reported over
 three months or more; below that the two halves are too short to mean anything.
 
+**Designed around the worst moment, not the calm one.** The app gets opened
+mid-attack, when light hurts, reading is effortful and aim is poor. That is why
+the urgent path records first and asks later, why attack mode has three controls
+rather than a form, and why dimming exists at all. Anything that needs thought —
+aura symptoms, exact times, how well a drug worked — is deliberately left for
+afterwards.
+
 **Built for a phone first.** Every control clears 44px, controls opt out of
 double-tap zoom and long-press callouts, fields are 16px so Safari does not zoom
 on focus, and layouts respect the safe-area insets so nothing hides behind the
@@ -137,8 +165,8 @@ src/
                 episode helpers, exports, PDF builder, hash router
   store/        Zustand stores for settings and toasts
   components/   head map, calendar, heatmap, chart kit, episode views, UI kit
-  routes/       Home · LogEpisode · DayDetail · Timeline · Insights ·
-                History · Report · Settings
+  routes/       Home · Attack · LogEpisode · DayDetail · Timeline ·
+                Insights · History · Doctor · Settings
 ```
 
 - **React + TypeScript + Vite**, built to a fully static bundle.
