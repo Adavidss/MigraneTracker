@@ -94,6 +94,10 @@ The dev server runs on port 3130 at http://localhost:3130/MigraneTracker/.
 | `npm run preview` | Serve the production build |
 | `npm run icons` | Rasterise `public/favicon.svg` into the PWA icon set |
 
+The icon set is committed, so `npm run icons` is only needed after editing the
+source SVG. It uses sharp, which is deliberately not a dependency — install it
+for the one run with `npm install --no-save sharp`.
+
 ## Architecture
 
 ```
