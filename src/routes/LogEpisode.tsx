@@ -399,7 +399,7 @@ export default function LogEpisode({ episodeId }: { episodeId?: string }) {
                 onClick={() =>
                   addDose(preset.name, preset.defaultAmount, preset.defaultUnit)
                 }
-                className="flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm font-medium transition-colors hover:bg-muted"
+                className="flex min-h-12 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm font-medium transition-colors hover:bg-muted"
               >
                 <Plus className="size-3.5 text-muted-foreground" />
                 {preset.name}
@@ -408,7 +408,7 @@ export default function LogEpisode({ episodeId }: { episodeId?: string }) {
             <button
               type="button"
               onClick={() => addDose('', 1, 'tablets')}
-              className="flex min-h-10 items-center gap-1.5 rounded-xl border border-dashed border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-muted"
+              className="flex min-h-12 items-center gap-1.5 rounded-xl border border-dashed border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-muted"
             >
               <Pill className="size-3.5" />
               Other
@@ -489,8 +489,8 @@ export default function LogEpisode({ episodeId }: { episodeId?: string }) {
                             }
                             className={
                               active
-                                ? 'min-h-10 rounded-lg bg-primary text-sm font-semibold text-primary-foreground'
-                                : 'min-h-10 rounded-lg bg-muted text-sm font-medium text-muted-foreground hover:brightness-95'
+                                ? 'min-h-12 rounded-lg bg-primary text-base font-semibold text-primary-foreground'
+                                : 'min-h-12 rounded-lg bg-muted text-base font-medium text-muted-foreground hover:brightness-95'
                             }
                           >
                             {score}

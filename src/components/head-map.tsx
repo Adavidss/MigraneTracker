@@ -263,7 +263,7 @@ export function HeadMap({ points, onChange, brush, className }: HeadMapProps) {
               onRegionClick={paint}
               onRegionHover={setHovered}
             />
-            <div className="text-center text-[0.7rem] font-medium text-muted-foreground capitalize">
+            <div className="text-center text-xs font-medium text-muted-foreground capitalize">
               {view}
             </div>
           </div>
@@ -311,7 +311,7 @@ export function HeadMapPreview({
         <div key={view} className="space-y-1">
           <HeadView view={view} values={values} />
           {showLabels ? (
-            <div className="text-center text-[0.65rem] font-medium text-muted-foreground capitalize">
+            <div className="text-center text-xs font-medium text-muted-foreground capitalize">
               {view}
             </div>
           ) : null}
@@ -368,13 +368,13 @@ export function HeadMapFrequency({
               fillFor={fillFor}
               labelFor={labelFor}
             />
-            <div className="text-center text-[0.65rem] font-medium text-muted-foreground capitalize">
+            <div className="text-center text-xs font-medium text-muted-foreground capitalize">
               {view}
             </div>
           </div>
         ))}
       </div>
-      <div className="flex items-center justify-center gap-1 text-[0.65rem] text-muted-foreground">
+      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
         <span>Rarely</span>
         {[1, 2, 3, 4, 5].map((step) => (
           <span

@@ -285,7 +285,7 @@ export default function History() {
               </Field>
             </div>
 
-            <label className="flex min-h-11 items-center gap-3 text-[0.95rem]">
+            <label className="flex min-h-11 items-center gap-3 text-base">
               <input
                 type="checkbox"
                 checked={filters.auraOnly}

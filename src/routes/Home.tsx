@@ -144,14 +144,14 @@ export default function Home() {
           <Link
             to="/history"
             aria-label="Search history"
-            className="flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Search className="size-5" />
           </Link>
           <Link
             to="/settings"
             aria-label="Settings"
-            className="flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <SettingsIcon className="size-5" />
           </Link>
@@ -232,7 +232,7 @@ export default function Home() {
               {!atCurrentMonth ? (
                 <button
                   type="button"
-                  className="text-[0.7rem] text-primary"
+                  className="text-xs text-primary"
                   onClick={() => setMonth(startOfMonth(new Date()))}
                 >
                   Back to today

@@ -28,6 +28,17 @@
     ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, system-ui, sans-serif;
 
+  /* The type scale is raised above Tailwind's defaults and floored at 12px.
+     This app is read during a migraine, when vision is often disturbed, and
+     nothing is worth showing at a size that cannot be read then. `2xs` is the
+     floor and is only for dense axis labels. */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1.1;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
+
   --radius-xl: 1rem;
   --radius-2xl: 1.375rem;
 

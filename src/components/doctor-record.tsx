@@ -261,7 +261,7 @@ export function DoctorRecord({
         </Section>
       ) : null}
 
-      <p className="pb-4 text-[0.7rem] leading-relaxed text-muted-foreground">
+      <p className="pb-4 text-xs leading-relaxed text-muted-foreground">
         All figures come from entries the patient recorded themselves. Pain is
         rated 1 (mild) to 5 (extreme); relief is rated 1 (no relief) to 5
         (complete relief).

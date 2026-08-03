@@ -120,7 +120,7 @@ function SideNav({ path }: { path: string }) {
           to={to}
           aria-current={isActive(path, to) ? 'page' : undefined}
           className={cn(
-            'flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors',
+            'flex h-11 items-center gap-3 rounded-xl px-3 text-base transition-colors',
             isActive(path, to)
               ? 'bg-accent font-medium text-accent-foreground'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -136,7 +136,7 @@ function SideNav({ path }: { path: string }) {
           to="/history"
           aria-current={isActive(path, '/history') ? 'page' : undefined}
           className={cn(
-            'flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors',
+            'flex h-11 items-center gap-3 rounded-xl px-3 text-base transition-colors',
             isActive(path, '/history')
               ? 'bg-accent font-medium text-accent-foreground'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -149,7 +149,7 @@ function SideNav({ path }: { path: string }) {
           to="/settings"
           aria-current={isActive(path, '/settings') ? 'page' : undefined}
           className={cn(
-            'flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors',
+            'flex h-11 items-center gap-3 rounded-xl px-3 text-base transition-colors',
             isActive(path, '/settings')
               ? 'bg-accent font-medium text-accent-foreground'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -215,7 +215,7 @@ function NavTab({
       to={to}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[0.65rem] font-medium transition-colors',
+        'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium transition-colors',
         active ? 'text-primary' : 'text-muted-foreground',
       )}
     >

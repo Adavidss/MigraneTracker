@@ -4,7 +4,7 @@ import { getOngoingEpisode, initDb } from '@/lib/db'
 import { matchPath, navigate, useRoutePath } from '@/lib/router'
 import { useSettings } from '@/store/useSettings'
 import { Toaster } from '@/components/ui/toaster'
-import { DimOverlay, useComfort } from '@/components/comfort'
+import { DimIndicator, DimOverlay, useComfort } from '@/components/comfort'
 import Home from '@/routes/Home'
 import LogEpisode from '@/routes/LogEpisode'
 import DayDetail from '@/routes/DayDetail'
@@ -110,6 +110,10 @@ export default function App() {
       </Suspense>
       <Toaster />
       <DimOverlay level={settings.dimLevel} />
+      {/* Attack mode carries the full comfort controls already. */}
+      {path.split('?')[0] !== '/attack' ? (
+        <DimIndicator level={settings.dimLevel} />
+      ) : null}
     </>
   )
 }

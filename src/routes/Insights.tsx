@@ -213,14 +213,15 @@ export default function Insights() {
 
         <Section title="Year at a glance">
           <Card>
-            <CardHeader className="items-center">
+            {/* Stacked: three metric labels plus a title do not fit across a
+                phone once the type is at a readable size. */}
+            <CardHeader className="flex-col items-stretch gap-2">
               <CardTitle>Every day in range</CardTitle>
               <Segmented
                 ariaLabel="Heatmap metric"
                 value={metric}
                 onChange={setMetric}
                 options={HEATMAP_METRICS}
-                className="w-auto"
               />
             </CardHeader>
             <CardContent className="space-y-3">
@@ -394,7 +395,7 @@ export default function Insights() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              <p className="mt-1 text-center text-[0.7rem] text-muted-foreground">
+              <p className="mt-1 text-center text-xs text-muted-foreground">
                 Pain level, 1 mild to 5 extreme
               </p>
             </CardContent>

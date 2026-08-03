@@ -29,10 +29,18 @@ the reason the rest of the app can afford to be detailed.
 **Headache now** on the home screen records the attack immediately from your
 saved defaults — no form, no decisions — and opens a stripped screen with three
 things on it, each one tap: how bad it is, a dose taken, and it's over. Targets
-are enormous and sit at the bottom where a thumb already is. Changing the pain
-level quietly records a reading, so the pain curve builds itself just by using
-the app. The time since your last dose is shown in words, because a foggy head
-double-doses.
+are enormous, and "it's over" is pinned to the bottom so it never scrolls out
+of reach. Changing the pain level quietly records a reading, so the pain curve
+builds itself just by using the app.
+
+Every saved medication is its own button, most-used first, and each one carries
+its own last-dose time — "2 today · last 1h 35m ago". A foggy head double-doses,
+and the question "can I take this again?" is answered by the button you are
+already looking at rather than by doing arithmetic.
+
+Nothing on that screen opens a form. Headache type, the aura checklist and a
+note are all one tap away behind **Add more**, writing straight to the entry,
+and can equally be left for later.
 
 Comfort controls sit at the top of that screen and in Settings: a dimmer that
 goes darker than the phone's own brightness slider for photophobia, a text-size
@@ -128,6 +136,11 @@ the urgent path records first and asks later, why attack mode has three controls
 rather than a form, and why dimming exists at all. Anything that needs thought —
 aura symptoms, exact times, how well a drug worked — is deliberately left for
 afterwards.
+
+**Nothing is shown at a size that cannot be read during an attack.** The type
+scale is raised above the framework default and floored at 12px, which is
+reserved for dense axis labels; every tap target clears 44px. A text-size
+control scales the whole interface on top of that.
 
 **Built for a phone first.** Every control clears 44px, controls opt out of
 double-tap zoom and long-press callouts, fields are 16px so Safari does not zoom

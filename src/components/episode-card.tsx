@@ -53,7 +53,7 @@ export function EpisodeRow({
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-[0.95rem] font-medium">
+          <span className="truncate text-base font-medium">
             {EPISODE_TYPE_LABEL[episode.type]}
           </span>
           <IntensityBadge intensity={episode.intensity} />
@@ -103,7 +103,7 @@ export function EpisodeDetail({
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-[0.95rem] font-semibold">
+            <h3 className="text-base font-semibold">
               {EPISODE_TYPE_LABEL[episode.type]}
             </h3>
             <IntensityBadge intensity={episode.intensity} />
@@ -121,7 +121,7 @@ export function EpisodeDetail({
           <Link
             to={`/log/${episode.id}`}
             aria-label="Edit this entry"
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground print:hidden"
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground print:hidden"
           >
             <Pencil className="size-4" />
           </Link>
@@ -207,7 +207,7 @@ export function EpisodeDetail({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-1.5 text-[0.65rem] font-semibold tracking-wider text-muted-foreground uppercase">
+    <div className="mb-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
       {children}
     </div>
   )
@@ -260,7 +260,7 @@ export function NoHeadacheCard({ note }: { note?: string }) {
     <Card className="flex items-center gap-3 border-transparent bg-clear p-4 text-clear-foreground">
       <CircleDot className="size-5 shrink-0" />
       <div>
-        <p className="text-[0.95rem] font-medium">No headache</p>
+        <p className="text-base font-medium">No headache</p>
         {note ? <p className="mt-0.5 text-sm opacity-80">{note}</p> : null}
       </div>
     </Card>

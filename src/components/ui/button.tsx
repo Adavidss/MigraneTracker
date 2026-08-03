@@ -17,11 +17,11 @@ const buttonVariants = cva(
       },
       size: {
         // 44px minimum keeps every control comfortably tappable on a phone.
-        sm: 'h-9 px-3 text-sm [&_svg]:size-4',
-        md: 'h-11 px-4 text-[0.95rem] [&_svg]:size-[1.1rem]',
+        sm: 'h-11 px-3.5 text-sm [&_svg]:size-4',
+        md: 'h-11 px-4 text-base [&_svg]:size-[1.1rem]',
         lg: 'h-14 px-6 text-base [&_svg]:size-5',
         icon: 'size-11 [&_svg]:size-5',
-        iconSm: 'size-9 [&_svg]:size-4',
+        iconSm: 'size-11 [&_svg]:size-[1.1rem]',
       },
       block: {
         true: 'w-full',

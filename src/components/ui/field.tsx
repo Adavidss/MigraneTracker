@@ -9,7 +9,7 @@ import type {
 import { cn } from '@/lib/utils'
 
 const controlBase =
-  'w-full rounded-xl border border-input bg-card px-3 text-[0.95rem] text-foreground placeholder:text-muted-foreground/70 transition-colors focus:border-ring focus:outline-none disabled:opacity-50'
+  'w-full rounded-xl border border-input bg-card px-3 text-base text-foreground placeholder:text-muted-foreground/70 transition-colors focus:border-ring focus:outline-none disabled:opacity-50'
 
 export function Label({
   className,
@@ -110,7 +110,7 @@ export function Switch({
       className="flex w-full items-center justify-between gap-4 rounded-xl px-1 py-2 text-left"
     >
       <span className="min-w-0">
-        <span className="block text-[0.95rem] font-medium">{label}</span>
+        <span className="block text-base font-medium">{label}</span>
         {description ? (
           <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
             {description}
@@ -168,7 +168,7 @@ export function Segmented<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'min-h-9 flex-1 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors',
+              'min-h-11 flex-1 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors',
               active
                 ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',

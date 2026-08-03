@@ -69,7 +69,7 @@ export function Collapsible({
         className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left"
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-[0.95rem] font-medium">{title}</span>
+          <span className="block text-base font-medium">{title}</span>
           {summary ? (
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
               {summary}
@@ -114,7 +114,7 @@ export function EmptyState({
       )}
     >
       {Icon ? <Icon className="mb-3 size-7 text-muted-foreground/60" /> : null}
-      <p className="text-[0.95rem] font-medium">{title}</p>
+      <p className="text-base font-medium">{title}</p>
       {description ? (
         <p className="mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground">
           {description}
@@ -155,7 +155,7 @@ export function ChipGroup<T extends string>({
             aria-checked={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'min-h-10 rounded-xl border px-3.5 text-sm font-medium transition-colors',
+              'min-h-11 rounded-xl border px-3.5 text-sm font-medium transition-colors',
               active
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -202,7 +202,7 @@ export function ChipToggles<T extends string>({
             aria-checked={active}
             onClick={() => toggle(option.id)}
             className={cn(
-              'min-h-10 rounded-xl border px-3.5 text-sm font-medium transition-colors',
+              'min-h-11 rounded-xl border px-3.5 text-sm font-medium transition-colors',
               active
                 ? 'border-accent-foreground/30 bg-accent text-accent-foreground'
                 : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground',

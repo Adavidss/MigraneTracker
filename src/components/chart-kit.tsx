@@ -67,7 +67,7 @@ export function ChartLegend({
       {items.map((item) => (
         <span
           key={item.label}
-          className="flex items-center gap-1.5 text-[0.7rem] text-muted-foreground"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
         >
           <span
             className="size-2.5 rounded-[3px]"

@@ -101,7 +101,7 @@ export function Heatmap({
             return (
               <div key={i} className="w-[11px] shrink-0">
                 {isNewMonth ? (
-                  <span className="block text-[0.6rem] leading-none text-muted-foreground">
+                  <span className="block text-2xs leading-none text-muted-foreground">
                     {format(first, 'MMM')}
                   </span>
                 ) : null}
@@ -115,7 +115,7 @@ export function Heatmap({
             {['M', '', 'W', '', 'F', '', 'S'].map((day, i) => (
               <span
                 key={i}
-                className="flex h-[11px] items-center justify-end text-[0.55rem] leading-none text-muted-foreground"
+                className="flex h-[11px] items-center justify-end text-2xs leading-none text-muted-foreground"
               >
                 {day}
               </span>
@@ -161,7 +161,7 @@ export function Heatmap({
 
 export function HeatmapLegend({ metric }: { metric: HeatmapMetric }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 text-[0.65rem] text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
       <span className="flex items-center gap-1.5">
         <span
           className="size-[11px] rounded-[3px]"

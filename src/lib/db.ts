@@ -198,6 +198,23 @@ export async function addDoseNow(
   })
 }
 
+/**
+ * Partial update for the handful of fields attack mode edits in place, so the
+ * aura checklist and a note never require opening the full form.
+ */
+export async function patchEpisode(
+  id: string,
+  patch: Partial<Pick<Episode, 'type' | 'auraSymptoms' | 'auraNotes' | 'notes'>>,
+): Promise<void> {
+  const episode = await db.episodes.get(id)
+  if (!episode) return
+  await db.episodes.put({
+    ...episode,
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  })
+}
+
 export async function endEpisodeNow(id: string): Promise<void> {
   const episode = await db.episodes.get(id)
   if (!episode) return

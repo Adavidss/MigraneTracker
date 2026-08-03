@@ -173,7 +173,7 @@ export function DoctorOverview({
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="text-[0.95rem] font-medium">{flag.title}</p>
+                    <p className="text-base font-medium">{flag.title}</p>
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                       {flag.detail}
                     </p>

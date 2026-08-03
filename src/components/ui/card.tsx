@@ -85,7 +85,7 @@ export function Stat({
         {value}
       </div>
       {hint ? (
-        <div className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">
+        <div className="mt-0.5 text-xs leading-snug text-muted-foreground">
           {hint}
         </div>
       ) : null}

@@ -121,7 +121,7 @@ export function IntensityLegend({ className }: { className?: string }) {
       {INTENSITIES.map((level) => (
         <span
           key={level}
-          className="flex items-center gap-1.5 text-[0.7rem] text-muted-foreground"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
         >
           <IntensityDot intensity={level} size={8} />
           {level} {INTENSITY_LABEL[level]}

@@ -53,7 +53,7 @@ export function MonthCalendar({
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="pb-1 text-center text-[0.65rem] font-semibold tracking-wide text-muted-foreground uppercase"
+            className="pb-1 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase"
           >
             {compact ? day[0] : day}
           </div>
@@ -97,7 +97,7 @@ export function MonthCalendar({
             >
               <span
                 className={cn(
-                  'text-[0.65rem] leading-none font-medium tabular-nums',
+                  'text-xs leading-none font-medium tabular-nums',
                   clear ? 'text-clear-foreground' : 'text-muted-foreground',
                   hasPain && 'text-foreground',
                 )}
@@ -124,7 +124,7 @@ export function MonthCalendar({
 
               {data && data.episodes > 1 ? (
                 <span
-                  className="absolute top-0.5 right-0.5 flex size-3.5 items-center justify-center rounded-full text-[0.55rem] font-bold text-white"
+                  className="absolute top-0.5 right-0.5 flex size-3.5 items-center justify-center rounded-full text-2xs font-bold text-white"
                   style={{
                     backgroundColor: data.maxIntensity
                       ? INTENSITY_VAR[data.maxIntensity]
@@ -155,7 +155,7 @@ export function CalendarLegend({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[0.7rem] text-muted-foreground',
+        'flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground',
         className,
       )}
     >

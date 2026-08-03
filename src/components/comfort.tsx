@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Minus, Moon, Plus, Type } from 'lucide-react'
+import { Minus, Moon, Plus, Sun, Type } from 'lucide-react'
 import {
   MAX_DIM,
   TEXT_SCALE_FACTOR,
@@ -33,6 +33,27 @@ export function DimOverlay({ level }: { level: number }) {
       className="pointer-events-none fixed inset-0 z-[100] bg-black print:hidden"
       style={{ opacity: clamped }}
     />
+  )
+}
+
+/**
+ * A dim level left on after an attack makes every other screen look broken,
+ * and the controls that undo it live on the attack screen and in Settings —
+ * neither of which is where someone would think to look. This is the way back,
+ * shown wherever those controls are not.
+ */
+export function DimIndicator({ level }: { level: number }) {
+  if (!Number.isFinite(level) || level <= 0) return null
+
+  return (
+    <button
+      type="button"
+      onClick={() => updateSettings({ dimLevel: 0 })}
+      className="pb-safe fixed bottom-0 left-3 z-[101] mb-2 flex min-h-11 items-center gap-2 rounded-full border border-border bg-card/95 pr-4 pl-3 text-sm font-medium text-foreground shadow-lg backdrop-blur print:hidden"
+    >
+      <Sun className="size-4 shrink-0" />
+      Screen dimmed · tap to restore
+    </button>
   )
 }
 
@@ -149,7 +170,7 @@ function ComfortButton({
       disabled={disabled}
       className={cn(
         'flex items-center justify-center rounded-xl text-muted-foreground transition-colors disabled:opacity-30',
-        compact ? 'size-9' : 'size-12',
+        compact ? 'size-11' : 'size-12',
         !disabled && 'hover:bg-card active:bg-card',
       )}
     >
