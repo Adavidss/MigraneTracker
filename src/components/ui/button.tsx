@@ -14,6 +14,10 @@ const buttonVariants = cva(
         ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
         accent: 'bg-accent text-accent-foreground hover:opacity-90',
         destructive: 'bg-destructive text-white hover:opacity-90',
+        // The instant "headache now" action. Red carries the urgency, and it
+        // sits beside the primary button without either being mistaken for
+        // the other.
+        urgent: 'bg-urgent text-urgent-foreground hover:opacity-90',
       },
       size: {
         // 44px minimum keeps every control comfortably tappable on a phone.

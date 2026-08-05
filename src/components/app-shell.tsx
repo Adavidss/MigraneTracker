@@ -7,22 +7,45 @@ import {
   Plus,
   Search,
   Settings as SettingsIcon,
-  Waypoints,
 } from 'lucide-react'
 import { useOngoingEpisode } from '@/store/useOngoingEpisode'
-import { Link, useRoutePath } from '@/lib/router'
+import { Link } from '@/lib/router'
 import { cn } from '@/lib/utils'
 
+/**
+ * Four destinations. The calendar and the timeline were separate tabs but are
+ * two readings of the same thing — your history over time — so they share one
+ * tab and a switch at the top of it.
+ */
 const NAV = [
-  { to: '/', label: 'Calendar', icon: CalendarDays },
-  { to: '/timeline', label: 'Timeline', icon: Waypoints },
+  { to: '/', label: 'History', icon: CalendarDays },
   { to: '/insights', label: 'Insights', icon: ChartColumnIncreasing },
   { to: '/doctor', label: 'Doctor', icon: FileHeart },
+  { to: '/history', label: 'Search', icon: Search },
 ] as const
 
 function isActive(path: string, to: string) {
   const base = path.split('?')[0]!
-  return to === '/' ? base === '/' : base === to || base.startsWith(`${to}/`)
+  // The timeline is a view of the calendar screen, so it lights the same tab.
+  if (to === '/') return base === '/' || base === '/timeline'
+  return base === to || base.startsWith(`${to}/`)
+}
+
+/** Screens that take over the whole display carry no tab bar. */
+export function showsNav(path: string): boolean {
+  const base = path.split('?')[0]!
+  if (base === '/attack' || base === '/log') return false
+  return !base.startsWith('/log/')
+}
+
+/** Mounted once, above the router, so navigating never rebuilds it. */
+export function AppNav({ path }: { path: string }) {
+  return (
+    <>
+      <SideNav path={path} />
+      <BottomNav path={path} />
+    </>
+  )
 }
 
 export function AppShell({
@@ -38,14 +61,9 @@ export function AppShell({
   children: ReactNode
   hideNav?: boolean
 }) {
-  const path = useRoutePath()
-
   return (
-    <div className="min-h-svh md:flex">
-      {!hideNav ? <SideNav path={path} /> : null}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="pt-safe sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg print:static print:border-0 print:bg-white">
+    <>
+      <header className="pt-safe sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg print:static print:border-0 print:bg-white">
           <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-xl font-semibold tracking-tight">
@@ -59,23 +77,20 @@ export function AppShell({
               {actions}
             </div>
           </div>
-        </header>
+      </header>
 
-        <main
-          className={cn(
-            'mx-auto w-full max-w-3xl flex-1 px-4 pt-4',
-            // Clear the tab bar and, on an iPhone, the home indicator under it.
-            hideNav
-              ? 'pb-8'
-              : 'pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-10',
-          )}
-        >
-          {children}
-        </main>
-      </div>
-
-      {!hideNav ? <BottomNav path={path} /> : null}
-    </div>
+      <main
+        className={cn(
+          'mx-auto w-full max-w-3xl flex-1 px-4 pt-4',
+          // Clear the tab bar and, on an iPhone, the home indicator under it.
+          hideNav
+            ? 'pb-8'
+            : 'pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-10',
+        )}
+      >
+        {children}
+      </main>
+    </>
   )
 }
 
@@ -131,19 +146,6 @@ function SideNav({ path }: { path: string }) {
       ))}
 
       <div className="mt-auto space-y-1">
-        <Link
-          to="/history"
-          aria-current={isActive(path, '/history') ? 'page' : undefined}
-          className={cn(
-            'flex h-11 items-center gap-3 rounded-xl px-3 text-base transition-colors',
-            isActive(path, '/history')
-              ? 'bg-accent font-medium text-accent-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-          )}
-        >
-          <Search className="size-5" />
-          History
-        </Link>
         <Link
           to="/settings"
           aria-current={isActive(path, '/settings') ? 'page' : undefined}

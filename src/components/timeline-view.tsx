@@ -1,3 +1,5 @@
+export type HistoryView = 'calendar' | 'timeline'
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format, subDays, subMonths, subYears } from 'date-fns'
@@ -19,7 +21,6 @@ import {
   formatTime,
 } from '@/lib/utils'
 import { useSettings } from '@/store/useSettings'
-import { AppShell } from '@/components/app-shell'
 import { HeadMapPreview } from '@/components/head-map'
 import { EventTimeline } from '@/components/episode-card'
 import { Button } from '@/components/ui/button'
@@ -90,7 +91,7 @@ function buildFrames(episodes: Episode[]): Frame[] {
   return frames.sort((a, b) => a.at.localeCompare(b.at))
 }
 
-export default function Timeline() {
+export default function TimelineView() {
   const settings = useSettings()
   const [window, setWindow] = useState<Window>('month')
   const [index, setIndex] = useState(0)
@@ -137,11 +138,7 @@ export default function Timeline() {
   }
 
   return (
-    <AppShell
-      title="Timeline"
-      subtitle="Play back how your headaches unfolded"
-    >
-      <div className="space-y-5">
+    <div className="space-y-5">
         <Segmented
           ariaLabel="Time range"
           value={window}
@@ -274,10 +271,9 @@ export default function Timeline() {
                 setIndex(next)
               }}
             />
-          </>
-        )}
-      </div>
-    </AppShell>
+        </>
+      )}
+    </div>
   )
 }
 

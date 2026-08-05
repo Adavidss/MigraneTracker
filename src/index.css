@@ -17,6 +17,8 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-fg);
   --color-destructive: var(--destructive);
+  --color-urgent: var(--urgent);
+  --color-urgent-foreground: var(--urgent-fg);
   --color-ring: var(--ring);
 
   /* A day logged as headache-free: deliberately pale so saturation always
@@ -70,6 +72,9 @@
   --accent: #eceafa;
   --accent-fg: #423e9e;
   --destructive: #d2404f;
+  /* The instant-log button. Red so it is findable without reading. */
+  --urgent: #c62b3d;
+  --urgent-fg: #ffffff;
   --ring: #5b57c4;
   --clear: #d9f0e4;
   --clear-fg: #2b6b4f;
@@ -128,6 +133,8 @@
   --accent: #292539;
   --accent-fg: #c5c0f7;
   --destructive: #ef6b7a;
+  --urgent: #ef6b7a;
+  --urgent-fg: #16141f;
   --ring: #9b96ee;
   --clear: #1e3a2e;
   --clear-fg: #7fd4a8;
@@ -164,6 +171,8 @@
   --accent: #16151f;
   --accent-fg: #c5c0f7;
   --destructive: #ef6b7a;
+  --urgent: #ef6b7a;
+  --urgent-fg: #08070d;
   --ring: #9b96ee;
   --clear: #0f2419;
   --clear-fg: #7fd4a8;
@@ -199,6 +208,8 @@
   --accent: #2f2517;
   --accent-fg: #f3cd97;
   --destructive: #e08a6a;
+  --urgent: #e2795f;
+  --urgent-fg: #1a1309;
   --ring: #e3ac70;
   --clear: #202c1a;
   --clear-fg: #aacf8b;
@@ -235,6 +246,8 @@
   --accent: #f0e4cd;
   --accent-fg: #6f4d1d;
   --destructive: #ab4429;
+  --urgent: #a83a22;
+  --urgent-fg: #fff9ef;
   --ring: #8a5f2a;
   --clear: #dfecd2;
   --clear-fg: #486732;
@@ -271,6 +284,8 @@
   --accent: #26262a;
   --accent-fg: #d2d2d8;
   --destructive: #c69494;
+  --urgent: #c98a89;
+  --urgent-fg: #141416;
   --ring: #b3b3ba;
   --clear: #232824;
   --clear-fg: #a6bcaa;

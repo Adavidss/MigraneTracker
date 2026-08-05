@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useMemo, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import {
   addMonths,
   endOfMonth,
@@ -7,7 +7,7 @@ import {
   isFuture,
   startOfMonth,
   subMonths,
-} from 'date-fns'
+} from "date-fns";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -16,39 +16,41 @@ import {
   Search,
   Settings as SettingsIcon,
   Zap,
-} from 'lucide-react'
+} from "lucide-react";
 import {
   dayLogsInRange,
   episodesInRange,
   markHeadacheFree,
   startEpisodeNow,
   unmarkHeadacheFree,
-} from '@/lib/db'
-import { computeSummary } from '@/lib/stats'
-import type { CalendarDayData } from '@/components/month-calendar'
-import { CalendarLegend, MonthCalendar } from '@/components/month-calendar'
-import { AppShell } from '@/components/app-shell'
-import { Button } from '@/components/ui/button'
-import { Card, Stat } from '@/components/ui/card'
-import { IntensityLegend } from '@/components/intensity'
-import { Link, navigate } from '@/lib/router'
-import { dateKey, formatDuration, formatTime, round } from '@/lib/utils'
-import { useSettings } from '@/store/useSettings'
-import { useOngoingEpisode } from '@/store/useOngoingEpisode'
-import { toast } from '@/store/useToast'
-import { EPISODE_TYPE_LABEL, INTENSITY_VAR } from '@/lib/types'
+} from "@/lib/db";
+import { computeSummary } from "@/lib/stats";
+import type { CalendarDayData } from "@/components/month-calendar";
+import { CalendarLegend, MonthCalendar } from "@/components/month-calendar";
+import { AppShell } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
+import { Card, Stat } from "@/components/ui/card";
+import { IntensityLegend } from "@/components/intensity";
+import { Segmented } from "@/components/ui/field";
+import TimelineView, { type HistoryView } from "@/components/timeline-view";
+import { Link, navigate } from "@/lib/router";
+import { dateKey, formatDuration, formatTime, round } from "@/lib/utils";
+import { useSettings } from "@/store/useSettings";
+import { useOngoingEpisode } from "@/store/useOngoingEpisode";
+import { toast } from "@/store/useToast";
+import { EPISODE_TYPE_LABEL, INTENSITY_VAR } from "@/lib/types";
 
 /** Calendar data for one month, keyed by day. */
 function useMonthData(month: Date) {
-  const from = dateKey(startOfMonth(month))
-  const to = dateKey(endOfMonth(month))
+  const from = dateKey(startOfMonth(month));
+  const to = dateKey(endOfMonth(month));
 
-  const episodes = useLiveQuery(() => episodesInRange(from, to), [from, to])
-  const logs = useLiveQuery(() => dayLogsInRange(from, to), [from, to])
+  const episodes = useLiveQuery(() => episodesInRange(from, to), [from, to]);
+  const logs = useLiveQuery(() => dayLogsInRange(from, to), [from, to]);
 
   const days = useMemo(() => {
-    const map = new Map<string, CalendarDayData>()
-    if (!episodes || !logs) return map
+    const map = new Map<string, CalendarDayData>();
+    if (!episodes || !logs) return map;
 
     for (const log of logs) {
       map.set(log.date, {
@@ -58,11 +60,11 @@ function useMonthData(month: Date) {
         doses: 0,
         headacheFree: true,
         painMap: [],
-      })
+      });
     }
 
     for (const episode of episodes) {
-      const existing = map.get(episode.date)
+      const existing = map.get(episode.date);
       const cell: CalendarDayData =
         existing && !existing.headacheFree
           ? existing
@@ -73,72 +75,73 @@ function useMonthData(month: Date) {
               doses: 0,
               headacheFree: false,
               painMap: [],
-            }
+            };
 
-      cell.episodes += 1
-      cell.doses += episode.medications.length
+      cell.episodes += 1;
+      cell.doses += episode.medications.length;
       // The glyph should show the worst episode of the day.
       if (cell.maxIntensity == null || episode.intensity > cell.maxIntensity) {
-        cell.maxIntensity = episode.intensity
-        cell.painMap = episode.painMap
+        cell.maxIntensity = episode.intensity;
+        cell.painMap = episode.painMap;
       }
-      map.set(episode.date, cell)
+      map.set(episode.date, cell);
     }
 
-    return map
-  }, [episodes, logs])
+    return map;
+  }, [episodes, logs]);
 
-  return { days, episodes: episodes ?? [], logs: logs ?? [], from, to }
+  return { days, episodes: episodes ?? [], logs: logs ?? [], from, to };
 }
 
-export default function Home() {
-  const settings = useSettings()
-  const [month, setMonth] = useState(() => startOfMonth(new Date()))
-  const [starting, setStarting] = useState(false)
-  const { days, episodes, logs, from, to } = useMonthData(month)
+export default function Home({ view = "calendar" }: { view?: HistoryView }) {
+  const settings = useSettings();
+  const [month, setMonth] = useState(() => startOfMonth(new Date()));
+  const [starting, setStarting] = useState(false);
+  const { days, episodes, logs, from, to } = useMonthData(month);
 
-  const today = dateKey()
-  const todayCell = days.get(today)
-  const ongoing = useOngoingEpisode()
+  const today = dateKey();
+  const todayCell = days.get(today);
+  const ongoing = useOngoingEpisode();
 
   const summary = useMemo(
     () => computeSummary({ episodes, dayLogs: logs, from, to }),
     [episodes, logs, from, to],
-  )
+  );
 
-  const atCurrentMonth = format(month, 'yyyy-MM') === format(new Date(), 'yyyy-MM')
+  const atCurrentMonth =
+    format(month, "yyyy-MM") === format(new Date(), "yyyy-MM");
 
   const startNow = async () => {
-    setStarting(true)
+    setStarting(true);
     try {
-      await startEpisodeNow()
-      navigate('/attack')
+      await startEpisodeNow();
+      navigate("/attack");
     } catch (error) {
-      console.error(error)
-      toast.error('Could not start. Nothing was saved.')
+      console.error(error);
+      toast.error("Could not start. Nothing was saved.");
     } finally {
-      setStarting(false)
+      setStarting(false);
     }
-  }
+  };
 
   const toggleClearDay = async () => {
     if (todayCell?.headacheFree) {
-      await unmarkHeadacheFree(today)
-      toast.info('Removed today’s headache-free mark')
-      return
+      await unmarkHeadacheFree(today);
+      toast.info("Removed today’s headache-free mark");
+      return;
     }
     try {
-      await markHeadacheFree(today)
-      toast.success('Logged a headache-free day')
+      await markHeadacheFree(today);
+      toast.success("Logged a headache-free day");
     } catch {
-      toast.error('Today already has a headache logged.')
+      toast.error("Today already has a headache logged.");
     }
-  }
+  };
 
   return (
     <AppShell
-      title="MigraineTracker"
-      subtitle={format(new Date(), 'EEEE d MMMM')}
+      title={view === "timeline" ? "Timeline" : "MigraineTracker"}
+      subtitle={format(new Date(), "EEEE d MMMM")}
       actions={
         <>
           <Link
@@ -159,11 +162,23 @@ export default function Home() {
       }
     >
       <div className="space-y-5">
+        <Segmented
+          ariaLabel="History view"
+          value={view}
+          onChange={(next) =>
+            navigate(next === "timeline" ? "/timeline" : "/", { replace: true })
+          }
+          options={[
+            { value: "calendar", label: "Calendar" },
+            { value: "timeline", label: "Timeline" },
+          ]}
+        />
+
         {ongoing ? (
           /* One tap back into attack mode, and nothing to read first. */
           <button
             type="button"
-            onClick={() => navigate('/attack')}
+            onClick={() => navigate("/attack")}
             className="flex w-full items-center gap-4 rounded-2xl bg-accent p-5 text-left text-accent-foreground"
           >
             <span
@@ -176,129 +191,147 @@ export default function Home() {
                 {EPISODE_TYPE_LABEL[ongoing.type]} in progress
               </span>
               <span className="mt-0.5 block text-sm opacity-80">
-                Since {formatTime(ongoing.startTime, settings.use24HourTime)} · tap
-                to update or end it
+                Since {formatTime(ongoing.startTime, settings.use24HourTime)} ·
+                tap to update or end it
               </span>
             </span>
             <ChevronRight className="size-6 shrink-0 opacity-70" />
           </button>
         ) : (
           <div className="space-y-2">
-            {/* The urgent path: no form, no decisions. It records the headache
-                immediately and opens the screen built for using mid-attack. */}
-            <Button
-              size="lg"
-              disabled={starting}
-              onClick={startNow}
-              className="h-20 w-full text-xl font-semibold"
-            >
-              <Zap className="size-6" />
-              {starting ? 'Starting…' : 'Headache now'}
-            </Button>
-
             <div className="grid grid-cols-2 gap-2">
+              {/* The urgent path: no form, no decisions. It records the
+                  headache immediately and opens the screen built for using
+                  mid-attack. Red so it is findable without reading. */}
               <Button
-                variant="outline"
-                className="h-14"
+                variant="urgent"
+                disabled={starting}
+                onClick={startNow}
+                className="h-20 text-lg font-semibold"
+              >
+                <Zap className="size-6" />
+                {starting ? "Starting…" : "Headache now"}
+              </Button>
+
+              <Button
                 onClick={() => navigate(`/log?date=${today}`)}
+                className="h-20 text-lg font-semibold"
               >
-                <Plus /> Add details
-              </Button>
-              <Button
-                variant={todayCell?.headacheFree ? 'accent' : 'outline'}
-                className="h-14"
-                disabled={!!todayCell && todayCell.episodes > 0}
-                onClick={toggleClearDay}
-              >
-                <CheckCircle2 />
-                {todayCell?.headacheFree ? 'Clear day ✓' : 'No headache'}
+                <Plus className="size-6" />
+                Log with details
               </Button>
             </div>
+
+            <Button
+              variant={todayCell?.headacheFree ? "accent" : "outline"}
+              block
+              className="h-14"
+              disabled={!!todayCell && todayCell.episodes > 0}
+              onClick={toggleClearDay}
+            >
+              <CheckCircle2 />
+              {todayCell?.headacheFree
+                ? "No headache today ✓"
+                : "No headache today"}
+            </Button>
           </div>
         )}
 
-        <Card>
-          <div className="flex items-center justify-between px-3 py-2.5">
-            <Button
-              variant="ghost"
-              size="iconSm"
-              aria-label="Previous month"
-              onClick={() => setMonth((m) => subMonths(m, 1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <div className="text-center">
-              <div className="text-sm font-semibold">{format(month, 'MMMM yyyy')}</div>
-              {!atCurrentMonth ? (
-                <button
-                  type="button"
-                  className="text-xs text-primary"
-                  onClick={() => setMonth(startOfMonth(new Date()))}
+        {view === "timeline" ? <TimelineView /> : null}
+
+        {view === "calendar" ? (
+          <>
+            <Card>
+              <div className="flex items-center justify-between px-3 py-2.5">
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  aria-label="Previous month"
+                  onClick={() => setMonth((m) => subMonths(m, 1))}
                 >
-                  Back to today
-                </button>
-              ) : null}
+                  <ChevronLeft />
+                </Button>
+                <div className="text-center">
+                  <div className="text-sm font-semibold">
+                    {format(month, "MMMM yyyy")}
+                  </div>
+                  {!atCurrentMonth ? (
+                    <button
+                      type="button"
+                      className="text-xs text-primary"
+                      onClick={() => setMonth(startOfMonth(new Date()))}
+                    >
+                      Back to today
+                    </button>
+                  ) : null}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  aria-label="Next month"
+                  disabled={isFuture(startOfMonth(addMonths(month, 1)))}
+                  onClick={() => setMonth((m) => addMonths(m, 1))}
+                >
+                  <ChevronRight />
+                </Button>
+              </div>
+
+              <div className="px-2.5 pb-3">
+                <MonthCalendar
+                  month={month}
+                  days={days}
+                  onSelectDay={(date) => navigate(`/day/${date}`)}
+                />
+              </div>
+
+              <div className="space-y-2 border-t border-border px-3 py-3">
+                <CalendarLegend />
+                <IntensityLegend />
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Stat
+                label="Headaches"
+                value={summary.totalEpisodes}
+                hint="this month"
+              />
+              <Stat
+                label="Headache days"
+                value={summary.headacheDays}
+                hint={`${summary.migraineDays} with migraine`}
+              />
+              <Stat
+                label="Average pain"
+                value={summary.averageIntensity ?? "—"}
+                hint="out of 5"
+              />
+              <Stat
+                label="Average length"
+                value={formatDuration(summary.averageDurationMinutes) ?? "—"}
+                hint={
+                  summary.ongoingCount
+                    ? `${summary.ongoingCount} still open`
+                    : "completed episodes"
+                }
+              />
             </div>
-            <Button
-              variant="ghost"
-              size="iconSm"
-              aria-label="Next month"
-              disabled={isFuture(startOfMonth(addMonths(month, 1)))}
-              onClick={() => setMonth((m) => addMonths(m, 1))}
-            >
-              <ChevronRight />
-            </Button>
-          </div>
 
-          <div className="px-2.5 pb-3">
-            <MonthCalendar
-              month={month}
-              days={days}
-              onSelectDay={(date) => navigate(`/day/${date}`)}
-            />
-          </div>
-
-          <div className="space-y-2 border-t border-border px-3 py-3">
-            <CalendarLegend />
-            <IntensityLegend />
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Stat label="Headaches" value={summary.totalEpisodes} hint="this month" />
-          <Stat
-            label="Headache days"
-            value={summary.headacheDays}
-            hint={`${summary.migraineDays} with migraine`}
-          />
-          <Stat
-            label="Average pain"
-            value={summary.averageIntensity ?? '—'}
-            hint="out of 5"
-          />
-          <Stat
-            label="Average length"
-            value={formatDuration(summary.averageDurationMinutes) ?? '—'}
-            hint={
-              summary.ongoingCount
-                ? `${summary.ongoingCount} still open`
-                : 'completed episodes'
-            }
-          />
-        </div>
-
-        {summary.totalEpisodes === 0 && summary.headacheFreeDays === 0 ? (
-          <p className="pt-2 text-center text-sm text-muted-foreground">
-            Nothing logged for {format(month, 'MMMM')} yet.
-          </p>
-        ) : (
-          <p className="pt-1 text-center text-xs text-muted-foreground">
-            {summary.headacheFreeDays} day
-            {summary.headacheFreeDays === 1 ? '' : 's'} confirmed headache-free ·{' '}
-            {round(summary.coverage * 100, 0) ?? 0}% of this month logged
-          </p>
-        )}
+            {summary.totalEpisodes === 0 && summary.headacheFreeDays === 0 ? (
+              <p className="pt-2 text-center text-sm text-muted-foreground">
+                Nothing logged for {format(month, "MMMM")} yet.
+              </p>
+            ) : (
+              <p className="pt-1 text-center text-xs text-muted-foreground">
+                {summary.headacheFreeDays} day
+                {summary.headacheFreeDays === 1 ? "" : "s"} confirmed
+                headache-free · {round(summary.coverage * 100, 0) ?? 0}% of this
+                month logged
+              </p>
+            )}
+          </>
+        ) : null}
       </div>
     </AppShell>
-  )
+  );
 }

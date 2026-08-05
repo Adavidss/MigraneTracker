@@ -5,24 +5,61 @@ import { matchPath, navigate, useRoutePath } from '@/lib/router'
 import { useSettings } from '@/store/useSettings'
 import { Toaster } from '@/components/ui/toaster'
 import { DimIndicator, DimOverlay, useComfort } from '@/components/comfort'
+import { AppNav, showsNav } from '@/components/app-shell'
 import Home from '@/routes/Home'
 import LogEpisode from '@/routes/LogEpisode'
 import DayDetail from '@/routes/DayDetail'
 import Attack from '@/routes/Attack'
+import History from '@/routes/History'
+import Settings from '@/routes/Settings'
 
-// Charting and PDF generation are only needed on a few screens, so they load
-// on demand rather than blocking the first paint.
-const Timeline = lazy(() => import('@/routes/Timeline'))
+/**
+ * Only the two screens that pull in the charting library are split out. Keeping
+ * the rest in the main bundle costs little and means most navigation never
+ * suspends at all.
+ */
 const Insights = lazy(() => import('@/routes/Insights'))
-const History = lazy(() => import('@/routes/History'))
 const Doctor = lazy(() => import('@/routes/Doctor'))
-const Settings = lazy(() => import('@/routes/Settings'))
 
-function Loading() {
+/**
+ * Warm the split chunks once the app is idle, so the first visit to Insights or
+ * the doctor summary is instant rather than a wait on a 110 kB download.
+ */
+function prefetchRoutes() {
+  const warm = () => {
+    void import('@/routes/Insights')
+    void import('@/routes/Doctor')
+  }
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(warm, { timeout: 3000 })
+  } else {
+    setTimeout(warm, 1200)
+  }
+}
+
+function FullScreenLoader() {
   return (
     <div className="flex min-h-svh items-center justify-center text-muted-foreground">
       <Loader2 className="size-6 animate-spin" />
       <span className="sr-only">Loading</span>
+    </div>
+  )
+}
+
+/**
+ * Shown only if a split chunk is somehow not warm yet. It holds the page's
+ * shape rather than blanking to a spinner, so nothing jumps when it resolves.
+ */
+function PageSkeleton() {
+  return (
+    <div
+      className="mx-auto w-full max-w-3xl animate-pulse space-y-3 px-4 pt-4"
+      aria-hidden
+    >
+      <div className="h-11 rounded-xl bg-muted" />
+      <div className="h-28 rounded-2xl bg-muted" />
+      <div className="h-44 rounded-2xl bg-muted" />
+      <div className="h-32 rounded-2xl bg-muted" />
     </div>
   )
 }
@@ -42,8 +79,9 @@ function Router() {
       return <Attack />
     case '/log':
       return <LogEpisode />
+    // The timeline is a view of the calendar screen rather than its own tab.
     case '/timeline':
-      return <Timeline />
+      return <Home view="timeline" />
     case '/insights':
       return <Insights />
     case '/history':
@@ -75,6 +113,10 @@ export default function App() {
       .finally(() => setReady(true))
   }, [])
 
+  useEffect(() => {
+    if (ready) prefetchRoutes()
+  }, [ready])
+
   /**
    * Someone opening the app during an attack wants the screen built for that,
    * not the calendar. Only on the first load, and only from the home route, so
@@ -101,13 +143,28 @@ export default function App() {
     window.scrollTo({ top: 0 })
   }, [path])
 
-  if (!ready) return <Loading />
+  if (!ready) return <FullScreenLoader />
+
+  const withNav = showsNav(path)
 
   return (
     <>
-      <Suspense fallback={<Loading />}>
-        <Router />
-      </Suspense>
+      <div className={withNav ? 'min-h-svh md:flex' : undefined}>
+        {/*
+         * The navigation lives here, above the router, so it is mounted once
+         * for the life of the app. Rendering it inside each screen meant every
+         * tap tore the tab bar down and rebuilt it, which is what made
+         * navigation flash.
+         */}
+        {withNav ? <AppNav path={path} /> : null}
+
+        <div className={withNav ? 'flex min-w-0 flex-1 flex-col' : undefined}>
+          <Suspense fallback={<PageSkeleton />}>
+            <Router />
+          </Suspense>
+        </div>
+      </div>
+
       <Toaster />
       <DimOverlay level={settings.dimLevel} />
       {/* Attack mode carries the full comfort controls already. */}

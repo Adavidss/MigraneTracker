@@ -150,6 +150,12 @@ that check and were re-derived. The "quiet" preset works because the ramp is
 monotone in lightness, so stripping the saturation costs appearance but not
 meaning.
 
+**The navigation is mounted once, above the router.** Each screen used to
+render its own tab bar, so every tap tore it down and rebuilt it. It now lives
+above the route and is literally the same DOM node throughout, which is what
+removed the flash; the two chunked screens are warmed on idle. Measured with a
+mutation observer rather than a timer, navigation went from 0.6–2 s to 11–45 ms.
+
 **Nothing is shown at a size that cannot be read during an attack.** The type
 scale is raised above the framework default and floored at 12px, which is
 reserved for dense axis labels; every tap target clears 44px. A text-size
