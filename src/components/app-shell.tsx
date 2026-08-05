@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Activity,
   CalendarDays,
@@ -7,9 +7,12 @@ import {
   Plus,
   Search,
   Settings as SettingsIcon,
+  Zap,
 } from 'lucide-react'
+import { startEpisodeNow } from '@/lib/db'
 import { useOngoingEpisode } from '@/store/useOngoingEpisode'
-import { Link } from '@/lib/router'
+import { toast } from '@/store/useToast'
+import { Link, navigate } from '@/lib/router'
 import { cn } from '@/lib/utils'
 
 /**
@@ -98,17 +101,59 @@ export function AppShell({
  * While an attack is in progress the main action is not "log something new",
  * it is "get me back to the screen I can use right now".
  */
-function useMainAction() {
+function useQuickAction() {
   const ongoing = useOngoingEpisode()
   return ongoing
-    ? { to: '/attack', label: 'Open attack', icon: Activity }
-    : { to: '/log', label: 'Log headache', icon: Plus }
+    ? { label: 'Open the attack in progress', icon: Activity, ongoing: true }
+    : { label: 'Log a headache now', icon: Zap, ongoing: false }
+}
+
+/**
+ * The red button. It writes the entry from the saved defaults and goes straight
+ * to attack mode, so starting a log is one tap with nothing to read — and once
+ * something is running it becomes the way back to that screen.
+ */
+function QuickButton({ className }: { className?: string }) {
+  const action = useQuickAction()
+  const Icon = action.icon
+  const [busy, setBusy] = useState(false)
+
+  const press = async () => {
+    if (action.ongoing) {
+      navigate('/attack')
+      return
+    }
+    setBusy(true)
+    try {
+      await startEpisodeNow()
+      navigate('/attack')
+    } catch (error) {
+      console.error(error)
+      toast.error('Could not start. Nothing was saved.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={press}
+      disabled={busy}
+      aria-label={action.label}
+      className={cn(
+        'flex items-center justify-center rounded-full bg-urgent text-urgent-foreground shadow-lg shadow-urgent/25 transition-transform active:scale-95 disabled:opacity-70',
+        className,
+      )}
+    >
+      <Icon className="size-7" />
+    </button>
+  )
 }
 
 /** Persistent rail on tablet and desktop. */
 function SideNav({ path }: { path: string }) {
-  const action = useMainAction()
-  const ActionIcon = action.icon
+  const quick = useQuickAction()
   return (
     <nav
       data-app-nav
@@ -120,13 +165,19 @@ function SideNav({ path }: { path: string }) {
         <div className="text-xs text-muted-foreground">Private headache journal</div>
       </div>
 
-      <Link
-        to={action.to}
-        className="mb-2 flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 font-medium text-primary-foreground transition-opacity hover:opacity-90"
-      >
-        <ActionIcon className="size-5" />
-        {action.label}
-      </Link>
+      <div className="mb-2 flex gap-2">
+        <Link
+          to="/log"
+          className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <Plus className="size-5" />
+          Details
+        </Link>
+        <QuickButton className="size-12 shrink-0" />
+      </div>
+      <p className="mb-3 px-1 text-xs text-muted-foreground">
+        {quick.ongoing ? 'Red reopens the attack' : 'Red logs one instantly'}
+      </p>
 
       {NAV.map(({ to, label, icon: Icon }) => (
         <Link
@@ -168,8 +219,6 @@ function SideNav({ path }: { path: string }) {
 function BottomNav({ path }: { path: string }) {
   const left = NAV.slice(0, 2)
   const right = NAV.slice(2)
-  const action = useMainAction()
-  const ActionIcon = action.icon
 
   return (
     <nav
@@ -177,19 +226,25 @@ function BottomNav({ path }: { path: string }) {
       aria-label="Main"
       className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-lg md:hidden print:hidden"
     >
-      <div className="mx-auto grid max-w-md grid-cols-5 items-end px-2 pt-1.5 pb-1">
+      {/*
+       * The centre column sizes to its contents rather than taking a fifth of
+       * the bar, so the two raised buttons get the room they need and the four
+       * tabs share what is left.
+       */}
+      <div className="mx-auto grid max-w-md grid-cols-[1fr_1fr_auto_1fr_1fr] items-end gap-x-0.5 px-1.5 pt-2 pb-1.5">
         {left.map((item) => (
           <NavTab key={item.to} {...item} active={isActive(path, item.to)} />
         ))}
 
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-2 px-1">
           <Link
-            to={action.to}
-            aria-label={action.label}
-            className="-mt-5 flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95"
+            to="/log"
+            aria-label="Log a headache with details"
+            className="-mt-5 flex size-[3.75rem] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95"
           >
-            <ActionIcon className="size-8" />
+            <Plus className="size-7" />
           </Link>
+          <QuickButton className="-mt-5 size-[3.75rem]" />
         </div>
 
         {right.map((item) => (
@@ -216,11 +271,11 @@ function NavTab({
       to={to}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium transition-colors',
+        'flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl text-center text-2xs leading-tight font-medium transition-colors',
         active ? 'text-primary' : 'text-muted-foreground',
       )}
     >
-      <Icon className={cn('size-[1.35rem]', active && 'stroke-[2.4]')} />
+      <Icon className={cn('size-6', active && 'stroke-[2.4]')} />
       {label}
     </Link>
   )
